@@ -1,9 +1,20 @@
 /**
  * @since 0.0.1
  */
-import { absurd, pipe } from 'fp-ts/lib/function'
-import * as RNEA from 'fp-ts/lib/ReadonlyNonEmptyArray'
-import * as O from 'fp-ts/lib/Option'
+import { absurd, pipe } from 'fp-ts/function'
+import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
+import * as RA from 'fp-ts/ReadonlyArray'
+import { fold } from 'fp-ts/Option'
+
+/**
+ * Immediate Invocation of a Function Expression
+ *
+ * @category utils
+ * @since 0.0.1
+ */
+export function ii<A>(fe: () => A): A {
+  return fe()
+}
 
 // -------------------------------------------------------------------------------------
 // model
@@ -130,9 +141,8 @@ export type NonEmptyFiniteList<A> = FiniteHead<A>
  * @since 0.0.1
  */
 export type Pointer<A> = {
-  readonly root: List<A>
-  readonly head: Head<A>
-  readonly offset: number
+  readonly list: List<A>
+  readonly index: Index
   readonly item: A
 }
 
@@ -213,7 +223,7 @@ export const append = <A>(end: A) => (init: List<A>): NonEmptyList<A> => {
 export const takeLeft = <A>(count: number) => (as: List<A>): List<A> => {
   return lazyHead(function* () {
     let i = 0
-    for (const item of toIterable(as)) {
+    for (const item of pipe(as, toIterable(linear))) {
       yield item
       i += 1
       if (i >= count) {
@@ -227,10 +237,10 @@ export const takeLeft = <A>(count: number) => (as: List<A>): List<A> => {
  * @category constructors
  * @since 0.0.1
  */
-export const fromArray = <A>(as: Array<A>): FiniteList<A> =>
+export const fromArray = <A>(as: ReadonlyArray<A>): FiniteList<A> =>
   pipe(
-    RNEA.fromArray(as),
-    O.fold(
+    RNEA.fromReadonlyArray(as),
+    fold(
       (): FiniteList<A> => empty,
       (neas): FiniteList<A> => staticHead(neas),
     ),
@@ -244,62 +254,79 @@ export const fromArray = <A>(as: Array<A>): FiniteList<A> =>
  * @category destructors
  * @since 0.0.1
  */
-export function toIterable<A>(as: List<A>): Iterable<A> {
-  return {
-    [Symbol.iterator]: function* () {
-      switch (as._tag) {
-        case 'Empty':
-          yield* as.items
-          return
-        case 'StaticHead':
-          yield* as.items
-          yield* toIterable(as.next)
-          return
-        case 'LazyHead':
-          yield* as.items()
-          yield* toIterable(as.next)
-          return
-      }
-      return absurd<void>(as)
-    },
+export function toIterable<A>(strategy: Strategy): (as: List<A>) => Iterable<A> {
+  return (as) => pipe(as, toIterables, strategy)
+}
+
+type Index = { readonly root: List<unknown>; readonly offset: number }
+
+/**
+ * @category FunctorWithIndex
+ * @since 0.0.1
+ */
+export const mapWithIndex: <A, B>(f: (i: Index, a: A) => B) => (fa: List<A>) => List<B> = (f) => (fa) => {
+  switch (fa._tag) {
+    case 'Empty':
+      return fa
+    case 'StaticHead':
+      return lazyHead(function* () {
+        let offset = 0
+        for (const item of fa.items) {
+          yield f({ root: fa, offset }, item)
+          offset += 1
+        }
+      }, mapWithIndex(f)(fa.next))
+    case 'LazyHead':
+      return lazyHead(function* () {
+        let offset = 0
+        for (const item of fa.items()) {
+          yield f({ root: fa, offset }, item)
+          offset += 1
+        }
+      }, mapWithIndex(f)(fa.next))
   }
+  return absurd(fa)
 }
 
 /**
- * @category destructors
+ * @category model
  * @since 0.0.1
  */
-export function toIterableRR<A>(as: List<A>): Iterable<Pointer<A>> {
-  return {
-    [Symbol.iterator]: function* () {
-      const rawHeads: Array<Head<A>> = heads(as)
-      const iterators: Array<Iterator<A, void, undefined>> = rawHeads.map(({ items }) =>
-        (typeof items === 'function' ? items() : items)[Symbol.iterator](),
-      )
-      let dones = 0
-      let offset = 0
-      while (dones < iterators.length) {
-        let i = 0
-        dones = 0
-        for (const iterator of iterators) {
-          const { value, done } = iterator.next()
-          if (done === true) {
-            dones += 1
-          } else {
-            const pointer: Pointer<A> = {
-              root: as,
-              head: rawHeads[i],
-              offset,
-              item: value as A,
-            }
-            yield pointer
-          }
-          i += 1
+export type Strategy = <A>(is: ReadonlyArray<Iterable<A>>) => Iterable<A>
+
+/**
+ * @category constructor
+ * @since 0.0.1
+ */
+export const linear: Strategy = (iterables) => {
+  return ii(function* () {
+    for (const iterable of iterables) {
+      yield* iterable
+    }
+  })
+}
+
+/**
+ * @category constructor
+ * @since 0.0.1
+ */
+export const roundRobin: Strategy = (iterables) => {
+  return ii(function* () {
+    const iterators = iterables.map((iterator) => iterator[Symbol.iterator]())
+
+    let dones = 0
+    while (dones < iterators.length) {
+      dones = 0
+      for (const iterator of iterators) {
+        const ret = iterator.next()
+        if (ret.done === true) {
+          dones += 1
+        } else {
+          yield ret.value
         }
-        offset += 1
       }
-    },
-  }
+    }
+  })
 }
 
 /**
@@ -307,16 +334,16 @@ export function toIterableRR<A>(as: List<A>): Iterable<Pointer<A>> {
  * @since 0.0.1
  */
 export function toArray<A>(as: InfiniteList<A>): never
-export function toArray<A>(as: List<A>): Array<A>
-export function toArray<A>(as: List<A>): Array<A> {
-  return Array.from(toIterable(as))
+export function toArray<A>(as: List<A>): ReadonlyArray<A>
+export function toArray<A>(as: List<A>): ReadonlyArray<A> {
+  return pipe(as, toIterable(linear), Array.from, (x: Array<A>) => x)
 }
 
 /**
  * @category destructors
  * @since 0.0.1
  */
-export function heads<A>(list: List<A>): Array<Head<A>> {
+export function heads<A>(list: List<A>): ReadonlyArray<Head<A>> {
   let nodes = []
   let node = list
   while (node._tag !== 'Empty') {
@@ -327,15 +354,39 @@ export function heads<A>(list: List<A>): Array<Head<A>> {
 }
 
 /**
+ * @category destructors
+ * @since 0.0.1
+ */
+export function toIterables<A>(as: List<A>): ReadonlyArray<Iterable<A>> {
+  return pipe(
+    heads(as),
+    RA.map(({ items }) => (typeof items === 'function' ? items() : items)),
+  )
+}
+
+/**
  * @since 0.0.1
  */
 export function find<A>(a: A): (as: List<A>) => List<Pointer<A>> {
   return (as) =>
-    lazyHead(function* () {
-      for (const pointer of toIterableRR(as)) {
-        if (pointer.item === a) {
-          yield pointer
-        }
-      }
-    })
+    pipe(
+      as,
+      mapWithIndex(
+        (index: Index, a: A): Pointer<A> => ({
+          list: as,
+          item: a,
+          index,
+        }),
+      ),
+      toIterables,
+      roundRobin,
+      (pointers) =>
+        lazyHead(function* () {
+          for (const pointer of pointers) {
+            if (pointer.item === a) {
+              yield pointer
+            }
+          }
+        }),
+    )
 }

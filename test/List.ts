@@ -49,11 +49,11 @@ describe('List', () => {
     expect(_.fromArray([1, 2, 3])).toStrictEqual(_.staticHead([1, 2, 3]))
   })
   it('toIterable', () => {
-    expect(Array.from(_.toIterable(_.empty))).toStrictEqual([])
-    expect(Array.from(_.toIterable(_.staticHead([1, 2, 3])))).toStrictEqual([1, 2, 3])
+    expect(Array.from(_.toIterable(_.linear)(_.empty))).toStrictEqual([])
+    expect(Array.from(_.toIterable(_.linear)(_.staticHead([1, 2, 3])))).toStrictEqual([1, 2, 3])
     expect(
       Array.from(
-        _.toIterable(
+        _.toIterable(_.linear)(
           _.lazyHead(function* () {
             yield 1
             yield 2
@@ -62,7 +62,7 @@ describe('List', () => {
         ),
       ),
     ).toStrictEqual([1, 2, 3])
-    for (const i of _.toIterable(
+    for (const i of _.toIterable(_.linear)(
       _.lazyHead(function* () {
         let i = 0
         while (true) {
@@ -74,7 +74,7 @@ describe('List', () => {
       expect(i).toStrictEqual(1)
       break
     }
-    expect(() => Array.from(_.toIterable(missingTag))).toThrow()
+    expect(() => Array.from(_.toIterable(_.linear)(missingTag))).toThrow()
   })
   it('toArray', () => {
     expect(_.toArray(_.empty)).toStrictEqual([])
@@ -103,67 +103,23 @@ describe('List', () => {
     ).toEqual([1])
     expect(pipe(_.staticHead([1, 2, 3]), _.takeLeft(2), _.toArray)).toStrictEqual([1, 2])
   })
-  it('toIterableRR', () => {
-    expect(pipe(_.empty, _.toIterableRR, Array.from)).toEqual([])
-
-    const list34 = _.staticHead([3, 4])
-    const iteration34 = _.toIterableRR(list34)
-
-    expect(Array.from(iteration34)).toEqual([
-      {
-        root: list34,
-        head: list34,
-        offset: 0,
-        item: 3,
-      },
-      {
-        root: list34,
-        head: list34,
-        offset: 1,
-        item: 4,
-      },
-    ])
-
-    const list1234 = _.staticHead([1, 2], list34)
-    const iteration1324 = _.toIterableRR(list1234)
-
-    expect(Array.from(iteration1324)).toEqual([
-      {
-        root: list1234,
-        head: list1234,
-        offset: 0,
-        item: 1,
-      },
-      {
-        root: list1234,
-        head: list34,
-        offset: 0,
-        item: 3,
-      },
-      {
-        root: list1234,
-        head: list1234,
-        offset: 1,
-        item: 2,
-      },
-      {
-        root: list1234,
-        head: list34,
-        offset: 1,
-        item: 4,
-      },
-    ])
+  it('mapWithindex', () => {
+    expect(() =>
+      pipe(
+        missingTag,
+        _.mapWithIndex((i, x) => [i, x]),
+        _.toArray,
+      ),
+    ).toThrow()
   })
-
   it('find', () => {
     expect(pipe(_.empty, _.find(0), _.toArray)).toEqual([])
     const head2 = _.staticHead([2])
     expect(pipe(head2, _.find(0), _.toArray)).toEqual([])
     expect(pipe(head2, _.find(2), _.toArray)).toEqual([
       {
-        root: head2,
-        head: head2,
-        offset: 0,
+        list: head2,
+        index: { root: head2, offset: 0 },
         item: 2,
       },
     ])
@@ -173,17 +129,15 @@ describe('List', () => {
     expect(pipe(head12, _.find(0), _.toArray)).toEqual([])
     expect(pipe(head12, _.find(1), _.toArray)).toEqual([
       {
-        root: head12,
-        head: head12,
-        offset: 0,
+        list: head12,
+        index: { root: head12, offset: 0 },
         item: 1,
       },
     ])
     expect(pipe(head12, _.find(2), _.toArray)).toEqual([
       {
-        root: head12,
-        head: head2,
-        offset: 0,
+        list: head12,
+        index: { root: head2, offset: 0 },
         item: 2,
       },
     ])
@@ -192,15 +146,13 @@ describe('List', () => {
     }, head2)
     expect(pipe(head22, _.find(2), _.toArray)).toEqual([
       {
-        root: head22,
-        head: head22,
-        offset: 0,
+        list: head22,
+        index: { root: head22, offset: 0 },
         item: 2,
       },
       {
-        root: head22,
-        head: head2,
-        offset: 0,
+        list: head22,
+        index: { root: head2, offset: 0 },
         item: 2,
       },
     ])

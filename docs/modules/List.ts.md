@@ -12,6 +12,11 @@ Added in v0.0.1
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [FunctorWithIndex](#functorwithindex)
+  - [mapWithIndex](#mapwithindex)
+- [constructor](#constructor)
+  - [linear](#linear)
+  - [roundRobin](#roundrobin)
 - [constructors](#constructors)
   - [append](#append)
   - [empty](#empty)
@@ -24,7 +29,7 @@ Added in v0.0.1
   - [heads](#heads)
   - [toArray](#toarray)
   - [toIterable](#toiterable)
-  - [toIterableRR](#toiterablerr)
+  - [toIterables](#toiterables)
 - [model](#model)
   - [Empty (type alias)](#empty-type-alias)
   - [EmptyFiniteList (type alias)](#emptyfinitelist-type-alias)
@@ -42,10 +47,46 @@ Added in v0.0.1
   - [NonEmptyList (type alias)](#nonemptylist-type-alias)
   - [Pointer (type alias)](#pointer-type-alias)
   - [StaticHead (type alias)](#statichead-type-alias)
+  - [Strategy (type alias)](#strategy-type-alias)
 - [utils](#utils)
   - [find](#find)
+  - [ii](#ii)
 
 ---
+
+# FunctorWithIndex
+
+## mapWithIndex
+
+**Signature**
+
+```ts
+export declare const mapWithIndex: <A, B>(f: (i: Index, a: A) => B) => (fa: List<A>) => List<B>
+```
+
+Added in v0.0.1
+
+# constructor
+
+## linear
+
+**Signature**
+
+```ts
+export declare const linear: Strategy
+```
+
+Added in v0.0.1
+
+## roundRobin
+
+**Signature**
+
+```ts
+export declare const roundRobin: Strategy
+```
+
+Added in v0.0.1
 
 # constructors
 
@@ -74,7 +115,7 @@ Added in v0.0.1
 **Signature**
 
 ```ts
-export declare const fromArray: <A>(as: A[]) => FiniteList<A>
+export declare const fromArray: <A>(as: readonly A[]) => FiniteList<A>
 ```
 
 Added in v0.0.1
@@ -130,7 +171,7 @@ Added in v0.0.1
 **Signature**
 
 ```ts
-export declare function heads<A>(list: List<A>): Array<Head<A>>
+export declare function heads<A>(list: List<A>): ReadonlyArray<Head<A>>
 ```
 
 Added in v0.0.1
@@ -141,7 +182,7 @@ Added in v0.0.1
 
 ```ts
 export declare function toArray<A>(as: InfiniteList<A>): never
-export declare function toArray<A>(as: List<A>): Array<A>
+export declare function toArray<A>(as: List<A>): ReadonlyArray<A>
 ```
 
 Added in v0.0.1
@@ -151,17 +192,17 @@ Added in v0.0.1
 **Signature**
 
 ```ts
-export declare function toIterable<A>(as: List<A>): Iterable<A>
+export declare function toIterable<A>(strategy: Strategy): (as: List<A>) => Iterable<A>
 ```
 
 Added in v0.0.1
 
-## toIterableRR
+## toIterables
 
 **Signature**
 
 ```ts
-export declare function toIterableRR<A>(as: List<A>): Iterable<Pointer<A>>
+export declare function toIterables<A>(as: List<A>): ReadonlyArray<Iterable<A>>
 ```
 
 Added in v0.0.1
@@ -330,9 +371,8 @@ Added in v0.0.1
 
 ```ts
 export type Pointer<A> = {
-  readonly root: List<A>
-  readonly head: Head<A>
-  readonly offset: number
+  readonly list: List<A>
+  readonly index: Index
   readonly item: A
 }
 ```
@@ -353,6 +393,16 @@ export type StaticHead<A> = {
 
 Added in v0.0.1
 
+## Strategy (type alias)
+
+**Signature**
+
+```ts
+export type Strategy = <A>(is: ReadonlyArray<Iterable<A>>) => Iterable<A>
+```
+
+Added in v0.0.1
+
 # utils
 
 ## find
@@ -361,6 +411,18 @@ Added in v0.0.1
 
 ```ts
 export declare function find<A>(a: A): (as: List<A>) => List<Pointer<A>>
+```
+
+Added in v0.0.1
+
+## ii
+
+Immediate Invocation of a Function Expression
+
+**Signature**
+
+```ts
+export declare function ii<A>(fe: () => A): A
 ```
 
 Added in v0.0.1
