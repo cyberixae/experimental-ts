@@ -24,29 +24,19 @@ export function ii<A>(fe: () => A): A {
  * @category model
  * @since 0.0.1
  */
-export type StaticHead<A> = {
-  readonly _tag: 'StaticHead'
-  readonly items: RNEA.ReadonlyNonEmptyArray<A>
-  readonly next: List<A>
-}
+export type StaticHead<A> = [RNEA.ReadonlyNonEmptyArray<A>, ...List<A>]
 
 /**
  * @category model
  * @since 0.0.1
  */
-export type FiniteHead<A> = StaticHead<A> & {
-  readonly next: FiniteList<A>
-}
+export type FiniteHead<A> = StaticHead<A> & [unknown, ...FiniteList<A>]
 
 /**
  * @category model
  * @since 0.0.1
  */
-export type LazyHead<A, R extends void | never> = {
-  readonly _tag: 'LazyHead'
-  readonly items: () => Generator<A, R, undefined>
-  readonly next: List<A>
-}
+export type LazyHead<A, R extends void | never> = [() => Generator<A, R, undefined>, ...List<A>]
 
 /**
  * @category model
@@ -54,18 +44,13 @@ export type LazyHead<A, R extends void | never> = {
  */
 export type InfiniteHead<A> =
   | LazyHead<A, never>
-  | (LazyHead<A, void> & {
-      readonly next: InfiniteList<A>
-    })
+  | (LazyHead<A, void> & [unknown, ...InfiniteList<A>]
 
 /**
  * @category model
  * @since 0.0.1
  */
-export type Empty<A> = {
-  readonly _tag: 'Empty'
-  readonly items: ReadonlyArray<A> & []
-}
+export type Empty<A> = ReadonlyArray<Head<A>> & []
 
 /* possibly infinite */
 
@@ -94,7 +79,7 @@ export type EmptyList<A> = Empty<A>
 export type NonEmptyList<A> =
   | StaticHead<A>
   | LazyHead<A, never>
-  | (LazyHead<A, void> & { readonly next: NonEmptyList<A> })
+  | (LazyHead<A, void> & [unknown, NonEmptyList<A>])
 
 /* provably infinite */
 
