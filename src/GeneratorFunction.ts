@@ -506,10 +506,7 @@ export const reduceRight: <A, B>(b: B, f: (a: A, b: B) => B) => (fa: GeneratorFu
 export const reduceRightWithIndex: <A, B>(b: B, f: (i: number, a: A, b: B) => B) => (fa: GeneratorFunction<A>) => B = (
   b,
   f,
-) => (fa) => pipe(
-  toArray(fa),
-  RA.reduceRightWithIndex(b, f),
-)
+) => (fa) => pipe(toArray(fa), RA.reduceRightWithIndex(b, f))
 
 /**
  * @category Traversable
