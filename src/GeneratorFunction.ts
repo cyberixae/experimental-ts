@@ -4,6 +4,7 @@
 
 import { Alt1 } from 'fp-ts/Alt'
 import { Alternative1 } from 'fp-ts/Alternative'
+import * as RA from 'fp-ts/ReadonlyArray'
 import { Applicative as ApplicativeHKT, Applicative1 } from 'fp-ts/Applicative'
 import { Compactable1 } from 'fp-ts/Compactable'
 import { Separated } from 'fp-ts/Separated'
@@ -504,15 +505,10 @@ export const reduceRight: <A, B>(b: B, f: (a: A, b: B) => B) => (fa: GeneratorFu
 export const reduceRightWithIndex: <A, B>(b: B, f: (i: number, a: A, b: B) => B) => (fa: GeneratorFunction<A>) => B = (
   b,
   f,
-) => (fa) => {
-  let acc = b
-  let i = 0
-  for (const a of fa()) {
-    acc = f(i, a, acc)
-    i += 1
-  }
-  return acc
-}
+) => (fa) => pipe(
+  toArray(fa),
+  RA.reduceRightWithIndex(b, f),
+)
 
 /**
  * @category Traversable
