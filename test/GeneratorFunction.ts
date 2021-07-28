@@ -64,21 +64,23 @@ describe('GeneratorFunction', () => {
       ),
     ).toStrictEqual([1, 3, 5])
   })
+  it('of', () => {
+    expect(pipe(_.of(1), _.toArray)).toStrictEqual([1])
+  })
 
   describe('pipeables', () => {
-    /*
     it('traverse', () => {
       const traverse = _.traverse(O.Applicative)((n: number): O.Option<number> => (n % 2 === 0 ? O.none : O.some(n)))
-      expect(pipe(_.fromArray([1, 2]), traverse, _.toArray)).toStrictEqual(O.none)
-      expect(pipe(_.fromArray([1, 3]), traverse, _.toArray)).toStrictEqual(O.some([1, 3]))
+      expect(pipe(_.fromArray([1, 2]), traverse)).toStrictEqual(O.none)
+      expect(pipe(_.fromArray([1, 3]), traverse, O.map(_.toArray))).toStrictEqual(O.some([1, 3]))
     })
 
     it('sequence', () => {
       const sequence = _.sequence(O.Applicative)
-      expect(pipe(_.fromArray([O.some(1), O.some(3)]), sequence, _.toArray)).toStrictEqual(O.some([1, 3]))
-      expect(pipe(_.fromArray([O.some(1), O.none]), sequence, _.toArray)).toStrictEqual(O.none)
+      expect(pipe(_.fromArray([O.some(1), O.some(3)]), sequence, O.map(_.toArray))).toStrictEqual(O.some([1, 3]))
+      expect(pipe(_.fromArray([O.some(1), O.none]), sequence)).toStrictEqual(O.none)
     })
-*/
+
     it('traverseWithIndex', () => {
       expect(
         pipe(
@@ -113,6 +115,12 @@ describe('GeneratorFunction', () => {
     it('unfold', () => {
       const as = _.unfold(5, (n) => (n > 0 ? O.some([n, n - 1]) : O.none))
       expect(_.toArray(as)).toStrictEqual([5, 4, 3, 2, 1])
+      expect(
+        pipe(
+          _.unfold(0, (_n) => O.none),
+          _.toArray,
+        ),
+      ).toStrictEqual([])
     })
 
     it('wither', async () => {
@@ -124,7 +132,10 @@ describe('GeneratorFunction', () => {
     it('wilt', async () => {
       const wilt = _.wilt(T.ApplicativePar)((n: number) => T.of(n > 2 ? E.right(n + 1) : E.left(n - 1)))
       expect(await pipe(_.fromArray([]), wilt, T.map(Record_.map(_.toArray)))()).toStrictEqual({ left: [], right: [] })
-      expect(await pipe(_.fromArray([1, 3]), wilt, T.map(Record_.map(_.toArray)))()).toStrictEqual({ left: [0], right: [4] })
+      expect(await pipe(_.fromArray([1, 3]), wilt, T.map(Record_.map(_.toArray)))()).toStrictEqual({
+        left: [0],
+        right: [4],
+      })
     })
 
     it('map', () => {
@@ -270,8 +281,13 @@ describe('GeneratorFunction', () => {
     })
 
     it('partitionMap', () => {
-      expect(pipe(_.fromArray([]), _.partitionMap(identity), Record_.map(_.toArray))).toStrictEqual({ left: [], right: [] })
-      expect(pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]), _.partitionMap(identity), Record_.map(_.toArray))).toStrictEqual({
+      expect(pipe(_.fromArray([]), _.partitionMap(identity), Record_.map(_.toArray))).toStrictEqual({
+        left: [],
+        right: [],
+      })
+      expect(
+        pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]), _.partitionMap(identity), Record_.map(_.toArray)),
+      ).toStrictEqual({
         left: ['foo'],
         right: [1, 2],
       })
