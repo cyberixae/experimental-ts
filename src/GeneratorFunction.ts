@@ -8,13 +8,12 @@ import { Applicative as ApplicativeHKT, Applicative1 } from 'fp-ts/Applicative'
 import { Compactable1 } from 'fp-ts/Compactable'
 import { Separated } from 'fp-ts/Separated'
 import { Either } from 'fp-ts/Either'
-import { Extend1 } from 'fp-ts/Extend'
 import { Filter1, Filterable1, Partition1 } from 'fp-ts/Filterable'
 import {
   FilterableWithIndex1,
   PartitionWithIndex1,
   PredicateWithIndex,
-  RefinementWithIndex
+  RefinementWithIndex,
 } from 'fp-ts/FilterableWithIndex'
 import { Foldable1 } from 'fp-ts/Foldable'
 import { FoldableWithIndex1 } from 'fp-ts/FoldableWithIndex'
@@ -24,12 +23,11 @@ import { FunctorWithIndex1 } from 'fp-ts/FunctorWithIndex'
 import { HKT } from 'fp-ts/HKT'
 import { Monad1 } from 'fp-ts/Monad'
 import { Monoid } from 'fp-ts/Monoid'
-import { Option, isSome, isNone } from 'fp-ts/Option'
+import { Option, isNone } from 'fp-ts/Option'
 import { PipeableTraverse1, Traversable1 } from 'fp-ts/Traversable'
 import { PipeableTraverseWithIndex1, TraversableWithIndex1 } from 'fp-ts/TraversableWithIndex'
 import { Unfoldable1 } from 'fp-ts/Unfoldable'
 import { PipeableWilt1, PipeableWither1, Witherable1 } from 'fp-ts/Witherable'
-
 
 import { InfiniteGeneratorFunction } from './InfiniteGeneratorFunction'
 import { NonEmptyGeneratorFunction } from './NonEmptyGeneratorFunction'
@@ -45,10 +43,11 @@ import { tombstone } from './Tombstone'
  */
 export type GeneratorFunction<A> = () => Generator<A, unknown, undefined>
 
-const concat = <A, B>(x: GeneratorFunction<A>, y: GeneratorFunction<B>): GeneratorFunction<A | B> => function* () {
-  yield* x()
-  yield* y()
-}
+const concat = <A, B>(x: GeneratorFunction<A>, y: GeneratorFunction<B>): GeneratorFunction<A | B> =>
+  function* () {
+    yield* x()
+    yield* y()
+  }
 
 // -------------------------------------------------------------------------------------
 // constructors
@@ -129,7 +128,6 @@ export const fromIterable = <A>(as: Iterable<A>): GeneratorFunction<A> =>
 // destructors
 // -------------------------------------------------------------------------------------
 
-
 /**
  * @category destructors
  * @since 0.0.1
@@ -154,16 +152,16 @@ export function toArray<A>(as: GeneratorFunction<A>): ReadonlyArray<A> {
  * @category Applicative
  * @since 0.0.1
  */
-export const of: Applicative1<URI>['of'] = (a) => function* () {
-  yield a
-}
+export const of: Applicative1<URI>['of'] = (a) =>
+  function* () {
+    yield a
+  }
 
 /**
  * @category Alternative
  * @since 0.0.1
  */
 export const zero: Alternative1<URI>['zero'] = () => empty
-
 
 // -------------------------------------------------------------------------------------
 // pipeables
@@ -173,9 +171,9 @@ export const zero: Alternative1<URI>['zero'] = () => empty
  * @category Alt
  * @since 0.0.1
  */
-export const altW: <B>(that: Lazy<GeneratorFunction<B>>) => <A>(fa: GeneratorFunction<A>) => GeneratorFunction<A | B> = (that) => (
-  fa
-) => concat(fa, that())
+export const altW: <B>(
+  that: Lazy<GeneratorFunction<B>>,
+) => <A>(fa: GeneratorFunction<A>) => GeneratorFunction<A | B> = (that) => (fa) => concat(fa, that())
 
 /**
  * @category Alt
@@ -187,8 +185,9 @@ export const alt: <A>(that: Lazy<GeneratorFunction<A>>) => (fa: GeneratorFunctio
  * @category Apply
  * @since 0.0.1
  */
-export const ap: <A>(fa: GeneratorFunction<A>) => <B>(fab: GeneratorFunction<(a: A) => B>) => GeneratorFunction<B> = (fa) =>
-  chain((f) => pipe(fa, map(f)))
+export const ap: <A>(fa: GeneratorFunction<A>) => <B>(fab: GeneratorFunction<(a: A) => B>) => GeneratorFunction<B> = (
+  fa,
+) => chain((f) => pipe(fa, map(f)))
 
 /**
  * @category combinators
@@ -197,7 +196,7 @@ export const ap: <A>(fa: GeneratorFunction<A>) => <B>(fab: GeneratorFunction<(a:
 export const apFirst: <B>(fb: GeneratorFunction<B>) => <A>(fa: GeneratorFunction<A>) => GeneratorFunction<A> = (fb) =>
   flow(
     map((a) => () => a),
-    ap(fb)
+    ap(fb),
   )
 
 /**
@@ -207,54 +206,60 @@ export const apFirst: <B>(fb: GeneratorFunction<B>) => <A>(fa: GeneratorFunction
 export const apSecond = <B>(fb: GeneratorFunction<B>): (<A>(fa: GeneratorFunction<A>) => GeneratorFunction<B>) =>
   flow(
     map(() => (b: B) => b),
-    ap(fb)
+    ap(fb),
   )
 
 /**
  * @category Monad
  * @since 0.0.1
  */
-export const chain: <A, B>(f: (a: A) => GeneratorFunction<B>) => (ma: GeneratorFunction<A>) => GeneratorFunction<B> = (f) => (ma) =>
+export const chain: <A, B>(f: (a: A) => GeneratorFunction<B>) => (ma: GeneratorFunction<A>) => GeneratorFunction<B> = (
+  f,
+) => (ma) =>
   pipe(
     ma,
-    chainWithIndex((_, a) => f(a))
+    chainWithIndex((_, a) => f(a)),
   )
 
 /**
  * @since 0.0.1
  */
 export const chainWithIndex: <A, B>(
-  f: (i: number, a: A) => GeneratorFunction<B>
-) => (ma: GeneratorFunction<A>) => GeneratorFunction<B> = (f) => (ma) => function* () {
-  let i = 0
-  for (const a of ma()) {
-    const mb = f(i, a)
-    yield* mb()
-    i += 1
+  f: (i: number, a: A) => GeneratorFunction<B>,
+) => (ma: GeneratorFunction<A>) => GeneratorFunction<B> = (f) => (ma) =>
+  function* () {
+    let i = 0
+    for (const a of ma()) {
+      const mb = f(i, a)
+      yield* mb()
+      i += 1
+    }
   }
-}
 
 /**
  * @category combinators
  * @since 0.0.1
  */
-export const chainFirst: <A, B>(f: (a: A) => GeneratorFunction<B>) => (ma: GeneratorFunction<A>) => GeneratorFunction<A> = (f) =>
+export const chainFirst: <A, B>(
+  f: (a: A) => GeneratorFunction<B>,
+) => (ma: GeneratorFunction<A>) => GeneratorFunction<A> = (f) =>
   chain((a) =>
     pipe(
       f(a),
-      map(() => a)
-    )
+      map(() => a),
+    ),
   )
 
 /**
  * @category Functor
  * @since 0.0.1
  */
-export const map: <A, B>(f: (a: A) => B) => (fa: GeneratorFunction<A>) => GeneratorFunction<B> = (f) => (fa) => function* () {
-  for (const a of fa()) {
-    yield f(a)
+export const map: <A, B>(f: (a: A) => B) => (fa: GeneratorFunction<A>) => GeneratorFunction<B> = (f) => (fa) =>
+  function* () {
+    for (const a of fa()) {
+      yield f(a)
+    }
   }
-}
 
 /**
  * @category FunctorWithIndex
@@ -262,35 +267,36 @@ export const map: <A, B>(f: (a: A) => B) => (fa: GeneratorFunction<A>) => Genera
  */
 export const mapWithIndex: <A, B>(f: (i: number, a: A) => B) => (fa: GeneratorFunction<A>) => GeneratorFunction<B> = (
   f,
-) => (fa) => function* () {
-  let i = 0
-  for (const a of fa()) {
-    yield f(i, a)
-    i += 1
+) => (fa) =>
+  function* () {
+    let i = 0
+    for (const a of fa()) {
+      yield f(i, a)
+      i += 1
+    }
   }
-}
-
-
 
 /**
  * @category Compactable
  * @since 0.0.1
  */
-export const separate = <A, B>(fa: GeneratorFunction<Either<A, B>>): Separated<GeneratorFunction<A>, GeneratorFunction<B>> => ({
-    left: function* () {
-      for (const e of fa()) {
-        if (e._tag === 'Left') {
-          yield e.left
-        }
-      }
-    },
-    right: function* () {
-      for (const e of fa()) {
-        if (e._tag === 'Right') {
-          yield e.right
-        }
+export const separate = <A, B>(
+  fa: GeneratorFunction<Either<A, B>>,
+): Separated<GeneratorFunction<A>, GeneratorFunction<B>> => ({
+  left: function* () {
+    for (const e of fa()) {
+      if (e._tag === 'Left') {
+        yield e.left
       }
     }
+  },
+  right: function* () {
+    for (const e of fa()) {
+      if (e._tag === 'Right') {
+        yield e.right
+      }
+    }
+  },
 })
 
 /**
@@ -300,30 +306,32 @@ export const separate = <A, B>(fa: GeneratorFunction<Either<A, B>>): Separated<G
 export const filter: {
   <A, B extends A>(refinement: Refinement<A, B>): (fa: GeneratorFunction<A>) => GeneratorFunction<B>
   <A>(predicate: Predicate<A>): (fa: GeneratorFunction<A>) => GeneratorFunction<A>
-} = <A>(predicate: Predicate<A>) => (fa: GeneratorFunction<A>) => function* () {
-  for (const a of fa()) {
-    if (predicate(a)) {
-      yield a
+} = <A>(predicate: Predicate<A>) => (fa: GeneratorFunction<A>) =>
+  function* () {
+    for (const a of fa()) {
+      if (predicate(a)) {
+        yield a
+      }
     }
   }
-}
 
 /**
  * @category FilterableWithIndex
  * @since 0.0.1
  */
 export const filterMapWithIndex = <A, B>(f: (i: number, a: A) => Option<B>) => (
-  fa: GeneratorFunction<A>
-): GeneratorFunction<B> => function* () {
-  let i = 0
-  for (const a of fa()) {
-    const o = f(i, a)
-    if (o._tag === 'Some') {
-      yield o.value
+  fa: GeneratorFunction<A>,
+): GeneratorFunction<B> =>
+  function* () {
+    let i = 0
+    for (const a of fa()) {
+      const o = f(i, a)
+      if (o._tag === 'Some') {
+        yield o.value
+      }
+      i += 1
     }
-    i += 1
   }
-}
 
 /**
  * @category Filterable
@@ -346,10 +354,12 @@ export const compact: <A>(fa: GeneratorFunction<Option<A>>) => GeneratorFunction
  */
 export const partition: {
   <A, B extends A>(refinement: Refinement<A, B>): (
-    fa: GeneratorFunction<A>
+    fa: GeneratorFunction<A>,
   ) => Separated<GeneratorFunction<A>, GeneratorFunction<B>>
   <A>(predicate: Predicate<A>): (fa: GeneratorFunction<A>) => Separated<GeneratorFunction<A>, GeneratorFunction<A>>
-} = <A>(predicate: Predicate<A>): ((fa: GeneratorFunction<A>) => Separated<GeneratorFunction<A>, GeneratorFunction<A>>) =>
+} = <A>(
+  predicate: Predicate<A>,
+): ((fa: GeneratorFunction<A>) => Separated<GeneratorFunction<A>, GeneratorFunction<A>>) =>
   partitionWithIndex((_, a) => predicate(a))
 
 /**
@@ -358,16 +368,16 @@ export const partition: {
  */
 export const partitionWithIndex: {
   <A, B extends A>(refinementWithIndex: RefinementWithIndex<number, A, B>): (
-    fa: GeneratorFunction<A>
+    fa: GeneratorFunction<A>,
   ) => Separated<GeneratorFunction<A>, GeneratorFunction<B>>
   <A>(predicateWithIndex: PredicateWithIndex<number, A>): (
-    fa: GeneratorFunction<A>
+    fa: GeneratorFunction<A>,
   ) => Separated<GeneratorFunction<A>, GeneratorFunction<A>>
 } = <A>(predicateWithIndex: PredicateWithIndex<number, A>) => (
-  fa: GeneratorFunction<A>
+  fa: GeneratorFunction<A>,
 ): Separated<GeneratorFunction<A>, GeneratorFunction<A>> => ({
   left: function* () {
-    let i = 0;
+    let i = 0
     for (const a of fa()) {
       if (predicateWithIndex(i, a)) {
         yield a
@@ -376,23 +386,22 @@ export const partitionWithIndex: {
     }
   },
   right: function* () {
-    let i = 0;
+    let i = 0
     for (const a of fa()) {
-      if (predicateWithIndex(i, a) == false) {
+      if (predicateWithIndex(i, a) === false) {
         yield a
       }
       i += 1
     }
-  }
+  },
 })
-
 
 /**
  * @category Filterable
  * @since 0.0.1
  */
 export const partitionMap: <A, B, C>(
-  f: (a: A) => Either<B, C>
+  f: (a: A) => Either<B, C>,
 ) => (fa: GeneratorFunction<A>) => Separated<GeneratorFunction<B>, GeneratorFunction<C>> = (f) =>
   partitionMapWithIndex((_, a) => f(a))
 
@@ -401,28 +410,28 @@ export const partitionMap: <A, B, C>(
  * @since 0.0.1
  */
 export const partitionMapWithIndex = <A, B, C>(f: (i: number, a: A) => Either<B, C>) => (
-  fa: GeneratorFunction<A>
+  fa: GeneratorFunction<A>,
 ): Separated<GeneratorFunction<B>, GeneratorFunction<C>> => ({
   left: function* () {
-    let i = 0;
+    let i = 0
     for (const a of fa()) {
-    const e = f(i, a)
-    if (e._tag === 'Left') {
+      const e = f(i, a)
+      if (e._tag === 'Left') {
         yield e.left
       }
       i += 1
     }
   },
   right: function* () {
-    let i = 0;
+    let i = 0
     for (const a of fa()) {
-    const e = f(i, a)
-    if (e._tag === 'Right') {
+      const e = f(i, a)
+      if (e._tag === 'Right') {
         yield e.right
       }
       i += 1
     }
-  }
+  },
 })
 
 /**
@@ -430,25 +439,28 @@ export const partitionMapWithIndex = <A, B, C>(f: (i: number, a: A) => Either<B,
  * @since 0.0.1
  */
 export const filterWithIndex: {
-  <A, B extends A>(refinementWithIndex: RefinementWithIndex<number, A, B>): (fa: GeneratorFunction<A>) => GeneratorFunction<B>
+  <A, B extends A>(refinementWithIndex: RefinementWithIndex<number, A, B>): (
+    fa: GeneratorFunction<A>,
+  ) => GeneratorFunction<B>
   <A>(predicateWithIndex: PredicateWithIndex<number, A>): (fa: GeneratorFunction<A>) => GeneratorFunction<A>
-} = <A>(predicateWithIndex: PredicateWithIndex<number, A>) => (fa: GeneratorFunction<A>): GeneratorFunction<A> => function*() {
-  let i = 0
-  for (const a of fa()) {
-    if (predicateWithIndex(i, a)) {
-      yield a
+} = <A>(predicateWithIndex: PredicateWithIndex<number, A>) => (fa: GeneratorFunction<A>): GeneratorFunction<A> =>
+  function* () {
+    let i = 0
+    for (const a of fa()) {
+      if (predicateWithIndex(i, a)) {
+        yield a
+      }
+      i += 1
     }
-    i += 1
   }
-}
 
 /**
  * @category FoldableWithIndex
  * @since 0.0.1
  */
-export const foldMapWithIndex: <M>(M: Monoid<M>) => <A>(f: (i: number, a: A) => M) => (fa: GeneratorFunction<A>) => M = (
-  M
-) => {
+export const foldMapWithIndex: <M>(
+  M: Monoid<M>,
+) => <A>(f: (i: number, a: A) => M) => (fa: GeneratorFunction<A>) => M = (M) => {
   const foldMapWithIndexM = foldMapWithIndex_(M)
   return (f) => (fa) => foldMapWithIndexM(fa, f)
 }
@@ -473,9 +485,10 @@ export const foldMap: <M>(M: Monoid<M>) => <A>(f: (a: A) => M) => (fa: Generator
  * @category FoldableWithIndex
  * @since 0.0.1
  */
-export const reduceWithIndex: <A, B>(b: B, f: (i: number, b: B, a: A) => B) => (fa: GeneratorFunction<A>) => B = (b, f) => (
-  fa
-) => reduceWithIndex_(fa, b, f)
+export const reduceWithIndex: <A, B>(b: B, f: (i: number, b: B, a: A) => B) => (fa: GeneratorFunction<A>) => B = (
+  b,
+  f,
+) => (fa) => reduceWithIndex_(fa, b, f)
 
 /**
  * @category Foldable
@@ -490,7 +503,7 @@ export const reduceRight: <A, B>(b: B, f: (a: A, b: B) => B) => (fa: GeneratorFu
  */
 export const reduceRightWithIndex: <A, B>(b: B, f: (i: number, a: A, b: B) => B) => (fa: GeneratorFunction<A>) => B = (
   b,
-  f
+  f,
 ) => (fa) => {
   let acc = b
   let i = 0
@@ -506,7 +519,7 @@ export const reduceRightWithIndex: <A, B>(b: B, f: (i: number, a: A, b: B) => B)
  * @since 0.0.1
  */
 export const traverse: PipeableTraverse1<URI> = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B>(f: (a: A) => HKT<F, B>) => (ta: GeneratorFunction<A>) => HKT<F, GeneratorFunction<B>>) => {
   const traverseWithIndexF = traverseWithIndex(F)
   return (f) => traverseWithIndexF((_, a) => f(a))
@@ -517,13 +530,13 @@ export const traverse: PipeableTraverse1<URI> = <F>(
  * @since 0.0.1
  */
 export const sequence: Traversable1<URI>['sequence'] = <F>(F: ApplicativeHKT<F>) => <A>(
-  ta: GeneratorFunction<HKT<F, A>>
+  ta: GeneratorFunction<HKT<F, A>>,
 ): HKT<F, GeneratorFunction<A>> => {
   return reduce_(ta, F.of(zero()), (fas, fa) =>
     F.ap(
       F.map(fas, (as) => (a: A) => append(a)(as)),
-      fa
-    )
+      fa,
+    ),
   )
 }
 
@@ -532,13 +545,13 @@ export const sequence: Traversable1<URI>['sequence'] = <F>(F: ApplicativeHKT<F>)
  * @since 0.0.1
  */
 export const traverseWithIndex: PipeableTraverseWithIndex1<URI, number> = <F>(F: ApplicativeHKT<F>) => <A, B>(
-  f: (i: number, a: A) => HKT<F, B>
+  f: (i: number, a: A) => HKT<F, B>,
 ): ((ta: GeneratorFunction<A>) => HKT<F, GeneratorFunction<B>>) =>
   reduceWithIndex(F.of(zero()), (i, fbs, a) =>
     F.ap(
       F.map(fbs, (bs) => (b: B) => append(b)(bs)),
-      f(i, a)
-    )
+      f(i, a),
+    ),
   )
 
 /**
@@ -546,7 +559,7 @@ export const traverseWithIndex: PipeableTraverseWithIndex1<URI, number> = <F>(F:
  * @since 0.0.1
  */
 export const wither: PipeableWither1<URI> = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B>(f: (a: A) => HKT<F, Option<B>>) => (fa: GeneratorFunction<A>) => HKT<F, GeneratorFunction<B>>) => {
   const traverseF = traverse(F)
   return (f) => (fa) => F.map(pipe(fa, traverseF(f)), compact)
@@ -557,9 +570,9 @@ export const wither: PipeableWither1<URI> = <F>(
  * @since 0.0.1
  */
 export const wilt: PipeableWilt1<URI> = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B, C>(
-  f: (a: A) => HKT<F, Either<B, C>>
+  f: (a: A) => HKT<F, Either<B, C>>,
 ) => (fa: GeneratorFunction<A>) => HKT<F, Separated<GeneratorFunction<B>, GeneratorFunction<C>>>) => {
   const traverseF = traverse(F)
   return (f) => (fa) => F.map(pipe(fa, traverseF(f)), separate)
@@ -569,19 +582,19 @@ export const wilt: PipeableWilt1<URI> = <F>(
  * @category Unfoldable
  * @since 0.0.1
  */
-export const unfold = <A, B>(b: B, f: (b: B) => Option<readonly [A, B]>): GeneratorFunction<A> => function*() {
-  let bb: B = b
-  while (true) {
-    const mt = f(bb)
-    if (isNone(mt)) {
-      return
+export const unfold = <A, B>(b: B, f: (b: B) => Option<readonly [A, B]>): GeneratorFunction<A> =>
+  function* () {
+    let bb: B = b
+    while (true) {
+      const mt = f(bb)
+      if (isNone(mt)) {
+        return
+      }
+      const [a, b] = mt.value
+      yield a
+      bb = b
     }
-    const [a, b] = mt.value
-    yield a
-    bb = b
   }
-}
-
 
 // -------------------------------------------------------------------------------------
 // non-pipeables
@@ -596,16 +609,16 @@ const filter_: Filter1<URI> = <A>(fa: GeneratorFunction<A>, predicate: Predicate
 const filterMap_: Filterable1<URI>['filterMap'] = (fa, f) => pipe(fa, filterMap(f))
 const partitionWithIndex_: PartitionWithIndex1<URI, number> = <A>(
   fa: GeneratorFunction<A>,
-  predicateWithIndex: (i: number, a: A) => boolean
+  predicateWithIndex: (i: number, a: A) => boolean,
 ): Separated<GeneratorFunction<A>, GeneratorFunction<A>> => pipe(fa, partitionWithIndex(predicateWithIndex))
 const partition_: Partition1<URI> = <A>(
   fa: GeneratorFunction<A>,
-  predicate: Predicate<A>
+  predicate: Predicate<A>,
 ): Separated<GeneratorFunction<A>, GeneratorFunction<A>> => pipe(fa, partition(predicate))
 const partitionMap_: Filterable1<URI>['partitionMap'] = (fa, f) => pipe(fa, partitionMap(f))
 const partitionMapWithIndex_ = <A, B, C>(
   fa: GeneratorFunction<A>,
-  f: (i: number, a: A) => Either<B, C>
+  f: (i: number, a: A) => Either<B, C>,
 ): Separated<GeneratorFunction<B>, GeneratorFunction<C>> => pipe(fa, partitionMapWithIndex(f))
 const alt_: Alt1<URI>['alt'] = (fa, that) => pipe(fa, alt(that))
 const reduce_: Foldable1<URI>['reduce'] = (fa, b, f) => pipe(fa, reduce(b, f))
@@ -631,34 +644,34 @@ const filterMapWithIndex_ = <A, B>(fa: GeneratorFunction<A>, f: (i: number, a: A
   pipe(fa, filterMapWithIndex(f))
 const filterWithIndex_ = <A>(
   fa: GeneratorFunction<A>,
-  predicateWithIndex: (i: number, a: A) => boolean
+  predicateWithIndex: (i: number, a: A) => boolean,
 ): GeneratorFunction<A> => pipe(fa, filterWithIndex(predicateWithIndex))
 const traverse_ = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B>(ta: GeneratorFunction<A>, f: (a: A) => HKT<F, B>) => HKT<F, GeneratorFunction<B>>) => {
   const traverseF = traverse(F)
   return (ta, f) => pipe(ta, traverseF(f))
 }
 /* istanbul ignore next */
 const traverseWithIndex_ = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B>(ta: GeneratorFunction<A>, f: (i: number, a: A) => HKT<F, B>) => HKT<F, GeneratorFunction<B>>) => {
   const traverseWithIndexF = traverseWithIndex(F)
   return (ta, f) => pipe(ta, traverseWithIndexF(f))
 }
 /* istanbul ignore next */
 const wither_ = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B>(ta: GeneratorFunction<A>, f: (a: A) => HKT<F, Option<B>>) => HKT<F, GeneratorFunction<B>>) => {
   const witherF = wither(F)
   return (fa, f) => pipe(fa, witherF(f))
 }
 /* istanbul ignore next */
 const wilt_ = <F>(
-  F: ApplicativeHKT<F>
+  F: ApplicativeHKT<F>,
 ): (<A, B, C>(
   fa: GeneratorFunction<A>,
-  f: (a: A) => HKT<F, Either<B, C>>
+  f: (a: A) => HKT<F, Either<B, C>>,
 ) => HKT<F, Separated<GeneratorFunction<B>, GeneratorFunction<C>>>) => {
   const wiltF = wilt(F)
   return (fa, f) => pipe(fa, wiltF(f))
@@ -692,7 +705,7 @@ declare module 'fp-ts/HKT' {
  */
 export const Functor: Functor1<URI> = {
   URI,
-  map: map_
+  map: map_,
 }
 
 /**
@@ -702,7 +715,7 @@ export const Functor: Functor1<URI> = {
 export const FunctorWithIndex: FunctorWithIndex1<URI, number> = {
   URI,
   map: map_,
-  mapWithIndex: mapWithIndex_
+  mapWithIndex: mapWithIndex_,
 }
 
 /**
@@ -713,7 +726,7 @@ export const Applicative: Applicative1<URI> = {
   URI,
   map: map_,
   ap: ap_,
-  of
+  of,
 }
 
 /**
@@ -725,7 +738,7 @@ export const Monad: Monad1<URI> = {
   map: map_,
   ap: ap_,
   of,
-  chain: chain_
+  chain: chain_,
 }
 
 /**
@@ -734,7 +747,7 @@ export const Monad: Monad1<URI> = {
  */
 export const Unfoldable: Unfoldable1<URI> = {
   URI,
-  unfold
+  unfold,
 }
 
 /**
@@ -744,7 +757,7 @@ export const Unfoldable: Unfoldable1<URI> = {
 export const Alt: Alt1<URI> = {
   URI,
   map: map_,
-  alt: alt_
+  alt: alt_,
 }
 
 /**
@@ -757,7 +770,7 @@ export const Alternative: Alternative1<URI> = {
   ap: ap_,
   of,
   alt: alt_,
-  zero
+  zero,
 }
 
 /**
@@ -767,7 +780,7 @@ export const Alternative: Alternative1<URI> = {
 export const Compactable: Compactable1<URI> = {
   URI,
   compact,
-  separate
+  separate,
 }
 
 /**
@@ -782,7 +795,7 @@ export const Filterable: Filterable1<URI> = {
   filter: filter_,
   filterMap: filterMap_,
   partition: partition_,
-  partitionMap: partitionMap_
+  partitionMap: partitionMap_,
 }
 
 /**
@@ -802,7 +815,7 @@ export const FilterableWithIndex: FilterableWithIndex1<URI, number> = {
   partitionMapWithIndex: partitionMapWithIndex_,
   partitionWithIndex: partitionWithIndex_,
   filterMapWithIndex: filterMapWithIndex_,
-  filterWithIndex: filterWithIndex_
+  filterWithIndex: filterWithIndex_,
 }
 
 /**
@@ -813,7 +826,7 @@ export const Foldable: Foldable1<URI> = {
   URI,
   reduce: reduce_,
   foldMap: foldMap_,
-  reduceRight: reduceRight_
+  reduceRight: reduceRight_,
 }
 
 /**
@@ -827,7 +840,7 @@ export const FoldableWithIndex: FoldableWithIndex1<URI, number> = {
   reduceRight: reduceRight_,
   reduceWithIndex: reduceWithIndex_,
   foldMapWithIndex: foldMapWithIndex_,
-  reduceRightWithIndex: reduceRightWithIndex_
+  reduceRightWithIndex: reduceRightWithIndex_,
 }
 
 /**
@@ -841,7 +854,7 @@ export const Traversable: Traversable1<URI> = {
   foldMap: foldMap_,
   reduceRight: reduceRight_,
   traverse: traverse_,
-  sequence
+  sequence,
 }
 
 /**
@@ -860,7 +873,7 @@ export const TraversableWithIndex: TraversableWithIndex1<URI, number> = {
   reduceRightWithIndex: reduceRightWithIndex_,
   traverse: traverse_,
   sequence,
-  traverseWithIndex: traverseWithIndex_
+  traverseWithIndex: traverseWithIndex_,
 }
 
 /**
@@ -882,5 +895,5 @@ export const Witherable: Witherable1<URI> = {
   traverse: traverse_,
   sequence,
   wither: wither_,
-  wilt: wilt_
+  wilt: wilt_,
 }
