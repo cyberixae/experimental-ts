@@ -99,10 +99,10 @@ export const takeLeft = <A>(count: number) => (as: GeneratorFunction<A>): Genera
   function* () {
     let i = 0
     for (const a of as()) {
-      yield a
-      if (i + 1 === count) {
+      if (i >= count) {
         return
       }
+      yield a
       i += 1
     }
   }
@@ -379,7 +379,7 @@ export const partitionWithIndex: {
   left: function* () {
     let i = 0
     for (const a of fa()) {
-      if (predicateWithIndex(i, a)) {
+      if (predicateWithIndex(i, a) === false) {
         yield a
       }
       i += 1
@@ -388,7 +388,7 @@ export const partitionWithIndex: {
   right: function* () {
     let i = 0
     for (const a of fa()) {
-      if (predicateWithIndex(i, a) === false) {
+      if (predicateWithIndex(i, a)) {
         yield a
       }
       i += 1

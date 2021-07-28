@@ -1,13 +1,15 @@
-
-import * as fc from 'fast-check'
+// import * as fc from 'fast-check'
 import * as E from 'fp-ts/Either'
-import * as Eq from 'fp-ts/Eq'
-import { identity, pipe, Predicate, tuple } from 'fp-ts/function'
-import * as M from 'fp-ts/Monoid'
+// import * as Eq from 'fp-ts/Eq'
+// import { identity, pipe, Predicate, tuple } from 'fp-ts/function'
+import { identity, pipe } from 'fp-ts/function'
+// import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
-import * as Ord from 'fp-ts/Ord'
-import * as Show from 'fp-ts/Show'
+import * as Record_ from 'fp-ts/Record'
+// import * as Ord from 'fp-ts/Ord'
+// import * as Show from 'fp-ts/Show'
 import * as T from 'fp-ts/Task'
+import * as string_ from 'fp-ts/string'
 
 import * as _ from '../src/GeneratorFunction'
 
@@ -64,7 +66,7 @@ describe('GeneratorFunction', () => {
   })
 
   describe('pipeables', () => {
-/*
+    /*
     it('traverse', () => {
       const traverse = _.traverse(O.Applicative)((n: number): O.Option<number> => (n % 2 === 0 ? O.none : O.some(n)))
       expect(pipe(_.fromArray([1, 2]), traverse, _.toArray)).toStrictEqual(O.none)
@@ -79,20 +81,21 @@ describe('GeneratorFunction', () => {
 */
     it('traverseWithIndex', () => {
       expect(
-        pipe(_.fromArray(['a', 'bb']),
-          _.traverseWithIndex(O.Applicative)((i, s) => (s.length >= 1 ? O.some(s + i) : O.none))
-        )).toStrictEqual(
-        O.some(['a0', 'bb1'])
-      )
+        pipe(
+          _.fromArray(['a', 'bb']),
+          _.traverseWithIndex(O.Applicative)((i, s) => (s.length >= 1 ? O.some(s + i) : O.none)),
+          O.map(_.toArray),
+        ),
+      ).toStrictEqual(O.some(['a0', 'bb1']))
       expect(
-        pipe(_.fromArray(['a', 'bb']),
-          
-          _.traverseWithIndex(O.Applicative)((i, s) => (s.length > 1 ? O.some(s + i) : O.none))
-        )).toStrictEqual(
-        O.none
-      )
+        pipe(
+          _.fromArray(['a', 'bb']),
+
+          _.traverseWithIndex(O.Applicative)((i, s) => (s.length > 1 ? O.some(s + i) : O.none)),
+        ),
+      ).toStrictEqual(O.none)
     })
-/*
+    /*
     it('lookup', () => {
       expect(_.lookup(0, _.fromArray([1, 2, 3]))).toStrictEqual(O.some(1))
       expect(_.lookup(3, _.fromArray([1, 2, 3]))).toStrictEqual(O.none)
@@ -109,91 +112,112 @@ describe('GeneratorFunction', () => {
 */
     it('unfold', () => {
       const as = _.unfold(5, (n) => (n > 0 ? O.some([n, n - 1]) : O.none))
-      expect(as).toStrictEqual([5, 4, 3, 2, 1])
+      expect(_.toArray(as)).toStrictEqual([5, 4, 3, 2, 1])
     })
 
     it('wither', async () => {
       const wither = _.wither(T.ApplicativePar)((n: number) => T.of(n > 2 ? O.some(n + 1) : O.none))
-      expect(await pipe(_.fromArray([]), wither)()).toStrictEqual([])
-      expect(await pipe(_.fromArray([1, 3]), wither)()).toStrictEqual([4])
+      expect(await pipe(_.fromArray([]), wither, T.map(_.toArray))()).toStrictEqual([])
+      expect(await pipe(_.fromArray([1, 3]), wither, T.map(_.toArray))()).toStrictEqual([4])
     })
 
     it('wilt', async () => {
       const wilt = _.wilt(T.ApplicativePar)((n: number) => T.of(n > 2 ? E.right(n + 1) : E.left(n - 1)))
-      expect(await pipe(_.fromArray([]), wilt)()).toStrictEqual({ left: [], right: [] })
-      expect(await pipe(_.fromArray([1, 3]), wilt)()).toStrictEqual({ left: [0], right: [4] })
+      expect(await pipe(_.fromArray([]), wilt, T.map(Record_.map(_.toArray)))()).toStrictEqual({ left: [], right: [] })
+      expect(await pipe(_.fromArray([1, 3]), wilt, T.map(Record_.map(_.toArray)))()).toStrictEqual({ left: [0], right: [4] })
     })
 
     it('map', () => {
       expect(
-        pipe(_.fromArray([1, 2, 3]),
-          _.map((n) => n * 2)
-        )).toStrictEqual(
-        [2, 4, 6]
-      )
+        pipe(
+          _.fromArray([1, 2, 3]),
+          _.map((n) => n * 2),
+          _.toArray,
+        ),
+      ).toStrictEqual([2, 4, 6])
     })
 
     it('mapWithIndex', () => {
       expect(
-        pipe(_.fromArray([1, 2, 3]),
-          _.mapWithIndex((i, n) => n + i)
-        )).toStrictEqual(
-        [1, 3, 5]
-      )
+        pipe(
+          _.fromArray([1, 2, 3]),
+          _.mapWithIndex((i, n) => n + i),
+          _.toArray,
+        ),
+      ).toStrictEqual([1, 3, 5])
     })
 
     it('alt', () => {
       expect(
-        pipe(_.fromArray([1, 2]),
-          
-          _.alt(() => _.fromArray([3, 4]))
-        )).toStrictEqual(
-        [1, 2, 3, 4]
-      )
+        pipe(
+          _.fromArray([1, 2]),
+          _.alt(() => _.fromArray([3, 4])),
+          _.toArray,
+        ),
+      ).toStrictEqual([1, 2, 3, 4])
     })
 
     it('ap', () => {
-      expect(pipe(_.fromArray([(x: number) => x * 2, (x: number) => x * 3]), _.ap(_.fromArray([1, 2, 3])), _.toArray)).toStrictEqual([2, 4, 6, 3, 6, 9])
+      expect(
+        pipe(_.fromArray([(x: number) => x * 2, (x: number) => x * 3]), _.ap(_.fromArray([1, 2, 3])), _.toArray),
+      ).toStrictEqual([2, 4, 6, 3, 6, 9])
     })
 
     it('apFirst', () => {
-      expect(pipe(_.fromArray([1, 2]), _.apFirst(_.fromArray(['a', 'b', 'c'])), _.toArray)).toStrictEqual([1, 1, 1, 2, 2, 2])
+      expect(pipe(_.fromArray([1, 2]), _.apFirst(_.fromArray(['a', 'b', 'c'])), _.toArray)).toStrictEqual([
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+      ])
     })
 
     it('apSecond', () => {
-      expect(pipe(_.fromArray([1, 2]), _.apSecond(_.fromArray(['a', 'b', 'c'])), _.toArray)).toStrictEqual(['a', 'b', 'c', 'a', 'b', 'c'])
+      expect(pipe(_.fromArray([1, 2]), _.apSecond(_.fromArray(['a', 'b', 'c'])), _.toArray)).toStrictEqual([
+        'a',
+        'b',
+        'c',
+        'a',
+        'b',
+        'c',
+      ])
     })
 
     it('chain', () => {
       expect(
-        pipe(_.fromArray([1, 2, 3]),
-          _.chain((n) => [n, n + 1])
-        )).toStrictEqual(
-        [1, 2, 2, 3, 3, 4]
-      )
+        pipe(
+          _.fromArray([1, 2, 3]),
+          _.chain((n) => _.fromArray([n, n + 1])),
+          _.toArray,
+        ),
+      ).toStrictEqual([1, 2, 2, 3, 3, 4])
     })
 
     it('chainWithIndex', () => {
       expect(
-        pipe(_.fromArray([1, 2, 3]),
-          _.chainWithIndex((i, n) => [n + i])
-        )).toStrictEqual(
-        [1, 3, 5]
-      )
+        pipe(
+          _.fromArray([1, 2, 3]),
+          _.chainWithIndex((i, n) => _.fromArray([n + i])),
+          _.toArray,
+        ),
+      ).toStrictEqual([1, 3, 5])
     })
 
     it('chainFirst', () => {
       expect(
-        pipe(_.fromArray([1, 2, 3]),
-          _.chainFirst((n) => [n, n + 1])
-        )).toStrictEqual(
-        [1, 1, 2, 2, 3, 3]
-      )
+        pipe(
+          _.fromArray([1, 2, 3]),
+          _.chainFirst((n) => _.fromArray([n, n + 1])),
+          _.toArray,
+        ),
+      ).toStrictEqual([1, 1, 2, 2, 3, 3])
     })
 
     it('foldMap', () => {
-      expect(pipe(_.fromArray(['a', 'b', 'c']), _.foldMap(M.monoidString)(identity))).toStrictEqual('abc')
-      expect(pipe(_.fromArray([]), _.foldMap(M.monoidString)(identity))).toStrictEqual('')
+      expect(pipe(_.fromArray(['a', 'b', 'c']), _.foldMap(string_.Monoid)(identity))).toStrictEqual('abc')
+      expect(pipe(_.fromArray([]), _.foldMap(string_.Monoid)(identity))).toStrictEqual('')
     })
 
     it('compact', () => {
@@ -203,125 +227,134 @@ describe('GeneratorFunction', () => {
     })
 
     it('separate', () => {
-      expect(pipe(_.fromArray([]), _.separate, _.toArray)).toStrictEqual({ left: [], right: [] })
-      expect(pipe(_.fromArray([E.left(123), E.right('123')]), _.separate, _.toArray)).toStrictEqual({ left: [123], right: ['123'] })
+      expect(pipe(_.fromArray([]), _.separate, Record_.map(_.toArray))).toStrictEqual({ left: [], right: [] })
+      expect(pipe(_.fromArray([E.left(123), E.right('123')]), _.separate, Record_.map(_.toArray))).toStrictEqual({
+        left: [123],
+        right: ['123'],
+      })
     })
 
     it('filter', () => {
       const g = (n: number) => n % 2 === 1
-      expect(pipe(_.fromArray([1, 2, 3]),_.filter(g))).toStrictEqual([1, 3])
-      const x = pipe(_.fromArray([O.some(3), O.some(2), O.some(1)]), _.filter(O.isSome))
+      expect(pipe(_.fromArray([1, 2, 3]), _.filter(g), _.toArray)).toStrictEqual([1, 3])
+      const x = pipe(_.fromArray([O.some(3), O.some(2), O.some(1)]), _.filter(O.isSome), _.toArray)
       expect(x).toStrictEqual([O.some(3), O.some(2), O.some(1)])
-      const y = pipe(_.fromArray([O.some(3), O.none, O.some(1)]), _.filter(O.isSome))
+      const y = pipe(_.fromArray([O.some(3), O.none, O.some(1)]), _.filter(O.isSome), _.toArray)
       expect(y).toStrictEqual([O.some(3), O.some(1)])
     })
 
     it('filterWithIndex', () => {
       const f = (n: number) => n % 2 === 0
-      expect(pipe(_.fromArray(['a', 'b', 'c']), _.filterWithIndex(f))).toStrictEqual(['a', 'c'])
+      expect(pipe(_.fromArray(['a', 'b', 'c']), _.filterWithIndex(f), _.toArray)).toStrictEqual(['a', 'c'])
     })
 
     it('filterMap', () => {
       const f = (n: number) => (n % 2 === 0 ? O.none : O.some(n))
-      expect(pipe(_.fromArray([1, 2, 3]), _.filterMap(f))).toStrictEqual([1, 3])
-      expect(pipe(_.fromArray([]), _.filterMap(f))).toStrictEqual([])
+      expect(pipe(_.fromArray([1, 2, 3]), _.filterMap(f), _.toArray)).toStrictEqual([1, 3])
+      expect(pipe(_.fromArray([]), _.filterMap(f), _.toArray)).toStrictEqual([])
     })
 
     it('foldMapWithIndex', () => {
       expect(
-        pipe(_.fromArray(['a', 'b']),
-          _.foldMapWithIndex(M.monoidString)((i, a) => i + a)
-        )).toStrictEqual(
-        '0a1b'
-      )
+        pipe(
+          _.fromArray(['a', 'b']),
+          _.foldMapWithIndex(string_.Monoid)((i, a) => i + a),
+        ),
+      ).toStrictEqual('0a1b')
     })
 
     it('filterMapWithIndex', () => {
       const f = (i: number, n: number) => ((i + n) % 2 === 0 ? O.none : O.some(n))
-      expect(pipe(_.fromArray([1, 2, 4]), _.filterMapWithIndex(f))).toStrictEqual([1, 2])
-      expect(pipe(_.fromArray([]), _.filterMapWithIndex(f))).toStrictEqual([])
+      expect(pipe(_.fromArray([1, 2, 4]), _.filterMapWithIndex(f), _.toArray)).toStrictEqual([1, 2])
+      expect(pipe(_.fromArray([]), _.filterMapWithIndex(f), _.toArray)).toStrictEqual([])
     })
 
     it('partitionMap', () => {
-      expect(pipe(_.fromArray([]), _.partitionMap(identity))).toStrictEqual({ left: [], right: [] })
-      expect(pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]), _.partitionMap(identity))).toStrictEqual({
+      expect(pipe(_.fromArray([]), _.partitionMap(identity), Record_.map(_.toArray))).toStrictEqual({ left: [], right: [] })
+      expect(pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]), _.partitionMap(identity), Record_.map(_.toArray))).toStrictEqual({
         left: ['foo'],
-        right: [1, 2]
+        right: [1, 2],
       })
     })
 
     it('partition', () => {
       expect(
-        pipe(_.fromArray([]),
-          _.partition((n) => n > 2)
-        )).toStrictEqual(
-        { left: [], right: [] }
-      )
+        pipe(
+          _.fromArray([]),
+          _.partition((n) => n > 2),
+          Record_.map(_.toArray),
+        ),
+      ).toStrictEqual({ left: [], right: [] })
       expect(
-        pipe(_.fromArray([1, 3]),
-          _.partition((n) => n > 2)
-        )).toStrictEqual(
-        { left: [1], right: [3] }
-      )
+        pipe(
+          _.fromArray([1, 3]),
+          _.partition((n) => n > 2),
+          Record_.map(_.toArray),
+        ),
+      ).toStrictEqual({ left: [1], right: [3] })
     })
 
     it('partitionMapWithIndex', () => {
       expect(
-        pipe(_.fromArray([]),
-          _.partitionMapWithIndex((_, a) => a)
-        )).toStrictEqual(
-        { left: [], right: [] }
-      )
+        pipe(
+          _.fromArray([]),
+          _.partitionMapWithIndex((_, a) => a),
+          Record_.map(_.toArray),
+        ),
+      ).toStrictEqual({ left: [], right: [] })
       expect(
-        pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]),
+        pipe(
+          _.fromArray([E.right(1), E.left('foo'), E.right(2)]),
           _.partitionMapWithIndex((i, a) =>
             pipe(
               a,
               E.filterOrElse(
                 (n) => n > i,
-                () => 'err'
-              )
-            )
-          )
-        )).toStrictEqual(
-        {
-          left: ['foo', 'err'],
-          right: [1]
-        }
-      )
+                () => 'err',
+              ),
+            ),
+          ),
+          Record_.map(_.toArray),
+        ),
+      ).toStrictEqual({
+        left: ['foo', 'err'],
+        right: [1],
+      })
     })
 
     it('partitionWithIndex', () => {
       expect(
-        pipe(_.fromArray([]),
-          _.partitionWithIndex((i, n) => i + n > 2)
-        )).toStrictEqual(
-        { left: [], right: [] }
-      )
+        pipe(
+          _.fromArray([]),
+          _.partitionWithIndex((i, n) => i + n > 2),
+          Record_.map(_.toArray),
+        ),
+      ).toStrictEqual({ left: [], right: [] })
       expect(
-        pipe(_.fromArray([1, 2]),
-          _.partitionWithIndex((i, n) => i + n > 2)
-        )).toStrictEqual(
-        { left: [1], right: [2] }
-      )
+        pipe(
+          _.fromArray([1, 2]),
+          _.partitionWithIndex((i, n) => i + n > 2),
+          Record_.map(_.toArray),
+        ),
+      ).toStrictEqual({ left: [1], right: [2] })
     })
 
     it('reduce', () => {
       expect(
-        pipe(_.fromArray(['a', 'b', 'c']),
-          _.reduce('', (acc, a) => acc + a)
-        )).toStrictEqual(
-        'abc'
-      )
+        pipe(
+          _.fromArray(['a', 'b', 'c']),
+          _.reduce('', (acc, a) => acc + a),
+        ),
+      ).toStrictEqual('abc')
     })
 
     it('reduceWithIndex', () => {
       expect(
-        pipe(_.fromArray(['a', 'b']),
-          _.reduceWithIndex('', (i, b, a) => b + i + a)
-        )).toStrictEqual(
-        '0a1b'
-      )
+        pipe(
+          _.fromArray(['a', 'b']),
+          _.reduceWithIndex('', (i, b, a) => b + i + a),
+        ),
+      ).toStrictEqual('0a1b')
     })
 
     it('reduceRight', () => {
@@ -335,16 +368,15 @@ describe('GeneratorFunction', () => {
 
     it('reduceRightWithIndex', () => {
       expect(
-        pipe(_.fromArray(['a', 'b']),
-          _.reduceRightWithIndex('', (i, a, b) => b + i + a)
-        )).toStrictEqual(
-        '1b0a'
-      )
+        pipe(
+          _.fromArray(['a', 'b']),
+          _.reduceRightWithIndex('', (i, a, b) => b + i + a),
+        ),
+      ).toStrictEqual('1b0a')
     })
-
   })
 
-/*
+  /*
   it('getMonoid', () => {
     const M = _.getMonoid<number>()
     expect(M.concat([1, 2], [3, 4])).toStrictEqual([1, 2, 3, 4])
@@ -425,7 +457,7 @@ describe('GeneratorFunction', () => {
     ).toStrictEqual([1, 2, 3, 4])
   })
 
-/*
+  /*
   it('head', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
     expect(_.head(as)).toStrictEqual(O.some(1))
@@ -440,7 +472,7 @@ describe('GeneratorFunction', () => {
 
   it('tail', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
-    expect(pipe(_.tail(as), O.fold(_.toArray)).toStrictEqual(O.some([2, 3]))
+    expect(pipe(_.tail(as), O.map(_.toArray)).toStrictEqual(O.some([2, 3]))
     expect(pipe(_.tail(_.empty)).toStrictEqual(O.none)
   })
 */
@@ -461,7 +493,7 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([1, 2, 3]), _.takeLeft(2), _.toArray)).toStrictEqual([1, 2])
   })
 
-/*
+  /*
   it('takeRight', () => {
     expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(2) , _.toArray).toStrictEqual([4, 5])
     expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(0) , _.toArray).toStrictEqual([])
@@ -506,7 +538,7 @@ describe('GeneratorFunction', () => {
 
   it('init', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
-    expect(pipe(_.init(as), O.fold(_.toArray))).toStrictEqual(O.some([1, 2]))
+    expect(pipe(_.init(as), O.map(_.toArray))).toStrictEqual(O.some([1, 2]))
     expect(pipe(_.init(_.empty))).toStrictEqual(O.none)
   })
 
@@ -603,8 +635,8 @@ describe('GeneratorFunction', () => {
 
   it('insertAt', () => {
     expect(pipe(_.fromArray([]          ), _.insertAt(1, 1)).toStrictEqual(O.none)
-    expect(pipe(_.fromArray([]          ), _.insertAt(0, 1), O.fold(_.toArray)).toStrictEqual(O.some([1]))
-    expect(pipe(_.fromArray([1, 2, 3, 4]), _.insertAt(2, 5), O.fold(_.toArray)).toStrictEqual(O.some([1, 2, 5, 3, 4]))
+    expect(pipe(_.fromArray([]          ), _.insertAt(0, 1), O.map(_.toArray)).toStrictEqual(O.some([1]))
+    expect(pipe(_.fromArray([1, 2, 3, 4]), _.insertAt(2, 5), O.map(_.toArray)).toStrictEqual(O.some([1, 2, 5, 3, 4]))
   })
 
   it('unsafeUpdateAt', () => {
@@ -617,20 +649,20 @@ describe('GeneratorFunction', () => {
 
   it('updateAt', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
-    expect(pipe(as, _.updateAt(1, 1), O.fold(_.toArray))).toStrictEqual(O.some([1, 1, 3]))
+    expect(pipe(as, _.updateAt(1, 1), O.map(_.toArray))).toStrictEqual(O.some([1, 1, 3]))
     expect(pipe(_.empty, _.updateAt(1, 1))).toStrictEqual(O.none)
   })
 
   it('deleteAt', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
-    expect(pipe(as, _.deleteAt(0), O.fold(_.toArray))).toStrictEqual(O.some([2, 3]))
+    expect(pipe(as, _.deleteAt(0), O.map(_.toArray))).toStrictEqual(O.some([2, 3]))
     expect(pipe(_.empty, _.deleteAt(1))).toStrictEqual(O.none)
   })
 
   it('modifyAt', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
     const double = (x: number): number => x * 2
-    expect(pipe(as, _.modifyAt(1, double), O.fold(_.toArray))).toStrictEqual(O.some([1, 4, 3]))
+    expect(pipe(as, _.modifyAt(1, double), O.map(_.toArray))).toStrictEqual(O.some([1, 4, 3]))
     expect(pipe(_.empty, _.modifyAt(1, double))).toStrictEqual(O.none)
   })
 
@@ -1001,10 +1033,10 @@ describe('GeneratorFunction', () => {
       readonly bar: () => number
     }
     const f = (a: number, x?: Foo) => (x !== undefined ? `${a}${x.bar()}` : `${a}`)
-    expect(_.Functor.map(_.fromArray([1, 2]), f)).toStrictEqual(['1', '2'])
+    expect(pipe(_.Functor.map(_.fromArray([1, 2]), f), _.toArray)).toStrictEqual(['1', '2'])
     expect(pipe(_.fromArray([1, 2]), _.map(f), _.toArray)).toStrictEqual(['1', '2'])
   })
-/*
+  /*
   it('getShow', () => {
     const S = _.getShow(Show.showString)
     expect(S.show([])).toStrictEqual(`[]`)
@@ -1016,7 +1048,7 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.empty, _.toArray)).toStrictEqual([])
   })
 
-/*
+  /*
   it('do notation', () => {
     expect(
       pipe(
@@ -1044,5 +1076,4 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([-1, -2, -3]), _.some(isPositive))).toStrictEqual(false)
   })
 */
-
 })
