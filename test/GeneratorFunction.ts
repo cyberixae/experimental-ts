@@ -473,7 +473,6 @@ describe('GeneratorFunction', () => {
     ).toStrictEqual([1, 2, 3, 4])
   })
 
-  /*
   it('head', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
     expect(_.head(as)).toStrictEqual(O.some(1))
@@ -488,10 +487,10 @@ describe('GeneratorFunction', () => {
 
   it('tail', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
-    expect(pipe(_.tail(as), O.map(_.toArray)).toStrictEqual(O.some([2, 3]))
-    expect(pipe(_.tail(_.empty)).toStrictEqual(O.none)
+    expect(pipe(_.tail(as), O.map(_.toArray))).toStrictEqual(O.some([2, 3]))
+    expect(_.tail(_.empty)).toStrictEqual(O.none)
   })
-*/
+
   it('takeLeft', () => {
     expect(pipe(_.empty, _.takeLeft(2), _.toArray)).toStrictEqual([])
     expect(pipe(_.fromArray([1, 2, 3]), _.takeLeft(2), _.toArray)).toStrictEqual([1, 2])
@@ -551,12 +550,13 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([2, 4, 1]      ), _.dropLeftWhile(f), _.toArray)).toStrictEqual([1])
     expect(pipe(_.fromArray([2, 4]         ), _.dropLeftWhile(f), _.toArray)).toStrictEqual([])
   })
-
+*/
   it('init', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
     expect(pipe(_.init(as), O.map(_.toArray))).toStrictEqual(O.some([1, 2]))
     expect(pipe(_.init(_.empty))).toStrictEqual(O.none)
   })
+  /*
 
   it('findIndex', () => {
     expect(pipe(_.fromArray([1, 2, 3]), _.findIndex((x) => x === 2), _.toArray)).toStrictEqual(O.some(1))
@@ -1064,18 +1064,18 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.empty, _.toArray)).toStrictEqual([])
   })
 
-  /*
   it('do notation', () => {
     expect(
       pipe(
         _.of(1),
         _.bindTo('a'),
-        _.bind('b', () => _.of('b'))
-      )).toStrictEqual(
-      [{ a: 1, b: 'b' }]
-    )
+        _.bind('b', () => _.of('b')),
+        _.toArray,
+      ),
+    ).toStrictEqual([{ a: 1, b: 'b' }])
   })
 
+  /*
   it('apS', () => {
     expect(pipe(_.of(1), _.bindTo('a'), _.apS('b', _.of('b')))).toStrictEqual([{ a: 1, b: 'b' }])
   })
