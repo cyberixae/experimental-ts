@@ -36,6 +36,7 @@ import { PipeableWilt1, PipeableWither1, Witherable1 } from 'fp-ts/Witherable'
 
 import { InfiniteGeneratorFunction } from './InfiniteGeneratorFunction'
 import { NonEmptyGeneratorFunction, report } from './NonEmptyGeneratorFunction'
+import { sighting } from './Sighting'
 
 // -------------------------------------------------------------------------------------
 // model
