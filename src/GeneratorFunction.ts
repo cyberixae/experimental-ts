@@ -19,13 +19,16 @@ import {
 } from 'fp-ts/FilterableWithIndex'
 import { Foldable1 } from 'fp-ts/Foldable'
 import { FoldableWithIndex1 } from 'fp-ts/FoldableWithIndex'
-import { identity, Lazy, Predicate, Refinement, pipe, flow } from 'fp-ts/function'
+import { identity, Lazy, pipe, flow } from 'fp-ts/function'
+import { bind_, bindTo_ } from './internal'
+import { Predicate } from 'fp-ts/Predicate'
+import { Refinement } from 'fp-ts/Refinement'
 import { Functor1 } from 'fp-ts/Functor'
 import { FunctorWithIndex1 } from 'fp-ts/FunctorWithIndex'
 import { HKT } from 'fp-ts/HKT'
 import { Monad1 } from 'fp-ts/Monad'
 import { Monoid } from 'fp-ts/Monoid'
-import { Option, isNone } from 'fp-ts/Option'
+import { Option, isNone, some, none } from 'fp-ts/Option'
 import { PipeableTraverse1, Traversable1 } from 'fp-ts/Traversable'
 import { PipeableTraverseWithIndex1, TraversableWithIndex1 } from 'fp-ts/TraversableWithIndex'
 import { Unfoldable1 } from 'fp-ts/Unfoldable'
@@ -890,4 +893,104 @@ export const Witherable: Witherable1<URI> = {
   sequence,
   wither: wither_,
   wilt: wilt_,
+}
+
+// -------------------------------------------------------------------------------------
+// do notation
+// -------------------------------------------------------------------------------------
+
+/**
+ * @since 0.0.1
+ */
+export const Do: GeneratorFunction<{}> = of({})
+
+/**
+ * @since 0.0.1
+ */
+export const bindTo = <N extends string>(
+  name: N,
+): (<A>(fa: GeneratorFunction<A>) => GeneratorFunction<{ [K in N]: A }>) => map(bindTo_(name))
+
+/**
+ * @since 0.0.1
+ */
+export const bind = <N extends string, A, B>(
+  name: Exclude<N, keyof A>,
+  f: (a: A) => GeneratorFunction<B>,
+): ((fa: GeneratorFunction<A>) => GeneratorFunction<{ [K in keyof A | N]: K extends keyof A ? A[K] : B }>) =>
+  chain((a) =>
+    pipe(
+      f(a),
+      map((b) => bind_(a, name, b)),
+    ),
+  )
+
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+
+/**
+ * @since 0.0.1
+ */
+export function isEmpty<A>(as: GeneratorFunction<A>): boolean {
+  return as().next().done === true
+}
+
+/**
+ * @since 0.0.1
+ */
+export function isNonEmpty<A>(as: GeneratorFunction<A>): as is NonEmptyGeneratorFunction<A> {
+  return as().next().done !== true
+}
+
+/**
+ * @since 0.0.1
+ */
+export function head<A>(as: GeneratorFunction<A>): Option<A> {
+  const r = as().next()
+  return r.done === true ? none : some(r.value)
+}
+
+/**
+ * @since 0.0.1
+ */
+export function last<A>(as: GeneratorFunction<A>): Option<A> {
+  let tmp: Option<A> = none
+  for (const a of as()) {
+    tmp = some(a)
+  }
+  return tmp
+}
+
+/**
+ * @since 0.0.1
+ */
+export function tail<A>(as: GeneratorFunction<A>): Option<GeneratorFunction<A>> {
+  return isEmpty(as)
+    ? none
+    : some(function* () {
+        const g = as()
+        g.next() // discard head
+        yield* g
+      })
+}
+
+/**
+ * @since 0.0.1
+ */
+export function init<A>(as: GeneratorFunction<A>): Option<GeneratorFunction<A>> {
+  return isEmpty(as)
+    ? none
+    : some(function* () {
+        const g = as()
+        const r = g.next()
+        if (r.done === true) {
+          return
+        }
+        let prev: A = r.value
+        for (const a of g) {
+          yield prev
+          prev = a
+        }
+      })
 }
