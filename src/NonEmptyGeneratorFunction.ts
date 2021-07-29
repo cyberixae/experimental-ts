@@ -2,7 +2,7 @@
  * @since 0.0.1
  */
 
-import { Tombstone } from './Tombstone'
+import { Sighting } from './Sighting'
 
 // -------------------------------------------------------------------------------------
 // model
@@ -12,4 +12,4 @@ import { Tombstone } from './Tombstone'
  * @category model
  * @since 0.0.1
  */
-export type NonEmptyGeneratorFunction<A> = () => Generator<A, Tombstone<A>, undefined>
+export type NonEmptyGeneratorFunction<A> = () => Generator<A, Sighting<A>, undefined>

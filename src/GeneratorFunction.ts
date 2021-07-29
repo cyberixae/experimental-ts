@@ -35,7 +35,7 @@ import { PipeableWilt1, PipeableWither1, Witherable1 } from 'fp-ts/Witherable'
 
 import { InfiniteGeneratorFunction } from './InfiniteGeneratorFunction'
 import { NonEmptyGeneratorFunction } from './NonEmptyGeneratorFunction'
-import { tombstone } from './Tombstone'
+import { sighting } from './Sighting'
 
 // -------------------------------------------------------------------------------------
 // model
@@ -81,7 +81,7 @@ export const prepend = <A>(head: A) => (tail: GeneratorFunction<A>): NonEmptyGen
   function* () {
     yield head
     yield* tail()
-    return tombstone(head)
+    return sighting(head)
   }
 
 /**
@@ -92,7 +92,7 @@ export const append = <A>(end: A) => (init: GeneratorFunction<A>): NonEmptyGener
   function* () {
     yield* init()
     yield end
-    return tombstone(end)
+    return sighting(end)
   }
 
 /**
