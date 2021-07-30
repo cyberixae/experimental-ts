@@ -958,80 +958,12 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.range(1, 5), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
     expect(pipe(_.range(10, 15), _.toArray)).toStrictEqual([10, 11, 12, 13, 14, 15])
   })
+*/
 
   it('replicate', () => {
     expect(pipe(_.replicate(0, 'a'), _.toArray)).toStrictEqual([])
     expect(pipe(_.replicate(3, 'a'), _.toArray)).toStrictEqual(['a', 'a', 'a'])
   })
-
-  it('comprehension', () => {
-    expect(
-      _.comprehension([[1, 2, 3]], (a) => a * 2)).toStrictEqual(
-      [2, 4, 6]
-    )
-    expect(
-      _.comprehension(
-        [
-          [1, 2, 3],
-          ['a', 'b']
-        ],
-        tuple
-      )).toStrictEqual(
-      [
-        [1, 'a'],
-        [1, 'b'],
-        [2, 'a'],
-        [2, 'b'],
-        [3, 'a'],
-        [3, 'b']
-      ]
-    )
-    expect(
-      _.comprehension(
-        [
-          [1, 2, 3],
-          ['a', 'b']
-        ],
-        tuple,
-        (a, b) => (a + b.length) % 2 === 0
-      )).toStrictEqual(
-      [
-        [1, 'a'],
-        [1, 'b'],
-        [3, 'a'],
-        [3, 'b']
-      ]
-    )
-  })
-
-  it('union', () => {
-    expect(pipe(_.union(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([3, 4])), _.toArray)).toStrictEqual([1, 2, 3, 4])
-    expect(pipe(_.union(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([2, 3])), _.toArray)).toStrictEqual([1, 2, 3])
-    expect(pipe(_.union(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([1, 2])), _.toArray)).toStrictEqual([1, 2])
-    expect(pipe(_.fromArray([1, 2]), _.union(Eq.eqNumber)([3, 4]))).toStrictEqual([1, 2, 3, 4])
-    expect(pipe(_.fromArray([1, 2]), _.union(Eq.eqNumber)([2, 3]))).toStrictEqual([1, 2, 3])
-    expect(pipe(_.fromArray([1, 2]), _.union(Eq.eqNumber)([1, 2]))).toStrictEqual([1, 2])
-  })
-
-  it('intersection', () => {
-    expect(pipe(_.intersection(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([3, 4])), _.toArray)).toStrictEqual([])
-    expect(pipe(_.intersection(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([2, 3])), _.toArray)).toStrictEqual([2])
-    expect(pipe(_.intersection(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([1, 2])), _.toArray)).toStrictEqual([1, 2])
-    expect(pipe(_.fromArray([1, 2]), _.intersection(Eq.eqNumber)([3, 4]))).toStrictEqual([])
-    expect(pipe(_.fromArray([1, 2]), _.intersection(Eq.eqNumber)([2, 3]))).toStrictEqual([2])
-    expect(pipe(_.fromArray([1, 2]), _.intersection(Eq.eqNumber)([1, 2]))).toStrictEqual([1, 2])
-  })
-
-  it('difference', () => {
-    expect(pipe(_.difference(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([3, 4])), _.toArray)).toStrictEqual([1, 2])
-    expect(pipe(_.difference(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([2, 3])), _.toArray)).toStrictEqual([1])
-    expect(pipe(_.difference(Eq.eqNumber)(_.fromArray([1, 2]), _.fromArray([1, 2])), _.toArray)).toStrictEqual([])
-    expect(pipe(_.fromArray([1, 2]), _.difference(Eq.eqNumber)([3, 4]))).toStrictEqual([1, 2])
-    expect(pipe(_.fromArray([1, 2]), _.difference(Eq.eqNumber)([2, 3]))).toStrictEqual([1])
-    expect(pipe(_.fromArray([1, 2]), _.difference(Eq.eqNumber)([1, 2]))).toStrictEqual([])
-  })
-
-*/
 
   it('should be safe when calling map with a binary function', () => {
     interface Foo {
@@ -1057,11 +989,9 @@ describe('GeneratorFunction', () => {
     ).toStrictEqual([{ a: 1, b: 'b' }])
   })
 
-  /*
   it('apS', () => {
-    expect(pipe(_.of(1), _.bindTo('a'), _.apS('b', _.of('b')))).toStrictEqual([{ a: 1, b: 'b' }])
+    expect(pipe(_.of(1), _.bindTo('a'), _.apS('b', _.of('b')), _.toArray)).toStrictEqual([{ a: 1, b: 'b' }])
   })
-*/
 
   it('every', () => {
     const isPositive: Predicate<number> = (n) => n > 0
