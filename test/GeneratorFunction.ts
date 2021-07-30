@@ -7,7 +7,6 @@ import { identity, pipe } from 'fp-ts/function'
 import * as O from 'fp-ts/Option'
 import * as Record_ from 'fp-ts/Record'
 // import * as Ord from 'fp-ts/Ord'
-// import * as Show from 'fp-ts/Show'
 import * as T from 'fp-ts/Task'
 import * as string_ from 'fp-ts/string'
 
@@ -655,14 +654,6 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([1, 2, 3, 4]), _.insertAt(2, 5), O.map(_.toArray)).toStrictEqual(O.some([1, 2, 5, 3, 4]))
   })
 
-  it('unsafeUpdateAt', () => {
-    // should return the same reference if nothing changed
-    const x = { a: 1 }
-    const as: _.GeneratorFunction<{ readonly a: number }> = _.fromArray([x])
-    const result = _.unsafeUpdateAt(0, x, as)
-    expect(result).toStrictEqual(as)
-  })
-
   it('updateAt', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
     expect(pipe(as, _.updateAt(1, 1), O.map(_.toArray))).toStrictEqual(O.some([1, 1, 3]))
@@ -704,45 +695,42 @@ describe('GeneratorFunction', () => {
     )
     expect(strictEqual(_.sort(Ord.ordNumber)(_.empty)).toStrictEqual(_.empty)
   })
-
+*/
   it('zipWith', () => {
     expect(
-      _.zipWith([1, 2, 3], ['a', 'b', 'c', 'd'], (n, s) => s + n)).toStrictEqual(
-      ['a1', 'b2', 'c3']
-    )
+      pipe(
+        _.fromArray([1, 2, 3]),
+        _.zipWith(_.fromArray(['a', 'b', 'c', 'd']), (n, s) => s + n),
+        _.toArray,
+      ),
+    ).toStrictEqual(['a1', 'b2', 'c3'])
   })
 
   it('zip', () => {
-    expect(pipe(_.zip(_.fromArray([1, 2, 3]), _.fromArray(['a', 'b', 'c', 'd'])), _.toArray)).toStrictEqual([
-      [1, 'a'],
-      [2, 'b'],
-      [3, 'c']
-    ])
     expect(pipe(_.fromArray([1, 2, 3]), _.zip(_.fromArray(['a', 'b', 'c', 'd'])), _.toArray)).toStrictEqual([
       [1, 'a'],
       [2, 'b'],
-      [3, 'c']
+      [3, 'c'],
     ])
   })
 
   it('unzip', () => {
     expect(
       pipe(
-       _.fromArray([
+        _.fromArray([
           [1, 'a'],
           [2, 'b'],
-          [3, 'c']
-        ]),
+          [3, 'c'],
+        ] as Array<[number, string]>),
         _.unzip,
-        ([xs, ys]) => [toArray(xs), toArray(ys)],
-      )).toStrictEqual(
-      [
-        [1, 2, 3],
-        ['a', 'b', 'c']
-      ]
-    )
+        ([xs, ys]) => [_.toArray(xs), _.toArray(ys)],
+      ),
+    ).toStrictEqual([
+      [1, 2, 3],
+      ['a', 'b', 'c'],
+    ])
   })
-
+  /*
   it('rights', () => {
     expect(pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]), _.rights, _.toArray)).toStrictEqual([1, 2])
     expect(pipe(_.empty, _.rights)).toStrictEqual([])
@@ -1052,14 +1040,7 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.Functor.map(_.fromArray([1, 2]), f), _.toArray)).toStrictEqual(['1', '2'])
     expect(pipe(_.fromArray([1, 2]), _.map(f), _.toArray)).toStrictEqual(['1', '2'])
   })
-  /*
-  it('getShow', () => {
-    const S = _.getShow(Show.showString)
-    expect(S.show([])).toStrictEqual(`[]`)
-    expect(S.show(['a'])).toStrictEqual(`["a"]`)
-    expect(S.show(['a', 'b'])).toStrictEqual(`["a", "b"]`)
-  })
-*/
+
   it('empty', () => {
     expect(pipe(_.empty, _.toArray)).toStrictEqual([])
   })

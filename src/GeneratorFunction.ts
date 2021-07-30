@@ -216,6 +216,61 @@ export const apSecond = <B>(fb: GeneratorFunction<B>): (<A>(fa: GeneratorFunctio
   )
 
 /**
+ * @category combinators
+ * @since 0.0.1
+ */
+
+export function zipWith<A, B, C>(
+  fb: GeneratorFunction<B>,
+  f: (a: A, b: B) => C,
+): (fa: GeneratorFunction<A>) => GeneratorFunction<C> {
+  return (fa) =>
+    function* () {
+      const ga = fa()
+      const gb = fb()
+      while (true) {
+        const ra = ga.next()
+        const rb = gb.next()
+        if (ra.done === true) {
+          return
+        }
+        if (rb.done === true) {
+          return
+        }
+        yield f(ra.value, rb.value)
+      }
+    }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function zip<B>(bs: GeneratorFunction<B>): <A>(as: GeneratorFunction<A>) => GeneratorFunction<readonly [A, B]> {
+  return zipWith(bs, (a, b) => [a, b])
+}
+
+/**
+ * @since 0.0.1
+ */
+export function unzip<A, B>(
+  abs: GeneratorFunction<readonly [A, B]>,
+): readonly [GeneratorFunction<A>, GeneratorFunction<B>] {
+  return [
+    function* () {
+      for (const [a, _] of abs()) {
+        yield a
+      }
+    },
+    function* () {
+      for (const [_, b] of abs()) {
+        yield b
+      }
+    },
+  ]
+}
+
+/**
  * @category Monad
  * @since 0.0.1
  */
