@@ -33,7 +33,7 @@ import { PipeableTraverseWithIndex1, TraversableWithIndex1 } from 'fp-ts/Travers
 import { Unfoldable1 } from 'fp-ts/Unfoldable'
 import { PipeableWilt1, PipeableWither1, Witherable1 } from 'fp-ts/Witherable'
 
-import { InfiniteGeneratorFunction } from './InfiniteGeneratorFunction'
+import { InfiniteGeneratorFunction, repeat } from './InfiniteGeneratorFunction'
 import { NonEmptyGeneratorFunction } from './NonEmptyGeneratorFunction'
 import { sighting } from './Sighting'
 
@@ -110,6 +110,14 @@ export const takeLeft = <A>(count: number) => (as: GeneratorFunction<A>): Genera
       i += 1
     }
   }
+
+/**
+ * @category constructors
+ * @since 0.0.1
+ */
+export function replicate<A>(n: number, a: A): GeneratorFunction<A> {
+  return pipe(repeat(a), takeLeft(n))
+}
 
 /**
  * @category constructors
@@ -1074,3 +1082,19 @@ export const some = <A>(predicate: Predicate<A>) => (as: GeneratorFunction<A>): 
   }
   return false
 }
+
+// -------------------------------------------------------------------------------------
+// pipeable sequence S
+// -------------------------------------------------------------------------------------
+
+/**
+ * @since 0.0.1
+ */
+export const apS = <A, N extends string, B>(
+  name: Exclude<N, keyof A>,
+  fb: GeneratorFunction<B>,
+): ((fa: GeneratorFunction<A>) => GeneratorFunction<{ [K in keyof A | N]: K extends keyof A ? A[K] : B }>) =>
+  flow(
+    map((a) => (b: B) => bind_(a, name, b)),
+    ap(fb),
+  )
