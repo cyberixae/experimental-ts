@@ -28,7 +28,7 @@ import { FunctorWithIndex1 } from 'fp-ts/FunctorWithIndex'
 import { HKT } from 'fp-ts/HKT'
 import { Monad1 } from 'fp-ts/Monad'
 import { Monoid } from 'fp-ts/Monoid'
-import { Option, isNone, some, none } from 'fp-ts/Option'
+import * as O from 'fp-ts/Option'
 import { PipeableTraverse1, Traversable1 } from 'fp-ts/Traversable'
 import { PipeableTraverseWithIndex1, TraversableWithIndex1 } from 'fp-ts/TraversableWithIndex'
 import { Unfoldable1 } from 'fp-ts/Unfoldable'
@@ -380,7 +380,7 @@ export const filter: {
  * @category FilterableWithIndex
  * @since 0.0.1
  */
-export const filterMapWithIndex = <A, B>(f: (i: number, a: A) => Option<B>) => (
+export const filterMapWithIndex = <A, B>(f: (i: number, a: A) => O.Option<B>) => (
   fa: GeneratorFunction<A>,
 ): GeneratorFunction<B> =>
   function* () {
@@ -398,14 +398,14 @@ export const filterMapWithIndex = <A, B>(f: (i: number, a: A) => Option<B>) => (
  * @category Filterable
  * @since 0.0.1
  */
-export const filterMap: <A, B>(f: (a: A) => Option<B>) => (fa: GeneratorFunction<A>) => GeneratorFunction<B> = (f) =>
+export const filterMap: <A, B>(f: (a: A) => O.Option<B>) => (fa: GeneratorFunction<A>) => GeneratorFunction<B> = (f) =>
   filterMapWithIndex((_, a) => f(a))
 
 /**
  * @category Compactable
  * @since 0.0.1
  */
-export const compact: <A>(fa: GeneratorFunction<Option<A>>) => GeneratorFunction<A> =
+export const compact: <A>(fa: GeneratorFunction<O.Option<A>>) => GeneratorFunction<A> =
   /*#__PURE__*/
   filterMap(identity)
 
@@ -613,7 +613,7 @@ export const traverseWithIndex: PipeableTraverseWithIndex1<URI, number> = <F>(F:
  */
 export const wither: PipeableWither1<URI> = <F>(
   F: ApplicativeHKT<F>,
-): (<A, B>(f: (a: A) => HKT<F, Option<B>>) => (fa: GeneratorFunction<A>) => HKT<F, GeneratorFunction<B>>) => {
+): (<A, B>(f: (a: A) => HKT<F, O.Option<B>>) => (fa: GeneratorFunction<A>) => HKT<F, GeneratorFunction<B>>) => {
   const traverseF = traverse(F)
   return (f) => (fa) => F.map(pipe(fa, traverseF(f)), compact)
 }
@@ -635,12 +635,12 @@ export const wilt: PipeableWilt1<URI> = <F>(
  * @category Unfoldable
  * @since 0.0.1
  */
-export const unfold = <A, B>(b: B, f: (b: B) => Option<readonly [A, B]>): GeneratorFunction<A> =>
+export const unfold = <A, B>(b: B, f: (b: B) => O.Option<readonly [A, B]>): GeneratorFunction<A> =>
   function* () {
     let bb: B = b
     while (true) {
       const mt = f(bb)
-      if (isNone(mt)) {
+      if (O.isNone(mt)) {
         return
       }
       const [a, b] = mt.value
@@ -693,8 +693,10 @@ const foldMapWithIndex_: FoldableWithIndex1<URI, number>['foldMapWithIndex'] = (
   reduceWithIndex_(fa, M.empty, (i, b, a) => M.concat(b, f(i, a)))
 const reduceRightWithIndex_: FoldableWithIndex1<URI, number>['reduceRightWithIndex'] = (fa, b, f) =>
   pipe(fa, reduceRightWithIndex(b, f))
-const filterMapWithIndex_ = <A, B>(fa: GeneratorFunction<A>, f: (i: number, a: A) => Option<B>): GeneratorFunction<B> =>
-  pipe(fa, filterMapWithIndex(f))
+const filterMapWithIndex_ = <A, B>(
+  fa: GeneratorFunction<A>,
+  f: (i: number, a: A) => O.Option<B>,
+): GeneratorFunction<B> => pipe(fa, filterMapWithIndex(f))
 const filterWithIndex_ = <A>(
   fa: GeneratorFunction<A>,
   predicateWithIndex: (i: number, a: A) => boolean,
@@ -715,7 +717,7 @@ const traverseWithIndex_ = <F>(
 /* istanbul ignore next */
 const wither_ = <F>(
   F: ApplicativeHKT<F>,
-): (<A, B>(ta: GeneratorFunction<A>, f: (a: A) => HKT<F, Option<B>>) => HKT<F, GeneratorFunction<B>>) => {
+): (<A, B>(ta: GeneratorFunction<A>, f: (a: A) => HKT<F, O.Option<B>>) => HKT<F, GeneratorFunction<B>>) => {
   const witherF = wither(F)
   return (fa, f) => pipe(fa, witherF(f))
 }
@@ -1002,18 +1004,18 @@ export function isNonEmpty<A>(as: GeneratorFunction<A>): as is NonEmptyGenerator
 /**
  * @since 0.0.1
  */
-export function head<A>(as: GeneratorFunction<A>): Option<A> {
+export function head<A>(as: GeneratorFunction<A>): O.Option<A> {
   const r = as().next()
-  return r.done === true ? none : some(r.value)
+  return r.done === true ? O.none : O.some(r.value)
 }
 
 /**
  * @since 0.0.1
  */
-export function last<A>(as: GeneratorFunction<A>): Option<A> {
-  let tmp: Option<A> = none
+export function last<A>(as: GeneratorFunction<A>): O.Option<A> {
+  let tmp: O.Option<A> = O.none
   for (const a of as()) {
-    tmp = some(a)
+    tmp = O.some(a)
   }
   return tmp
 }
@@ -1021,10 +1023,10 @@ export function last<A>(as: GeneratorFunction<A>): Option<A> {
 /**
  * @since 0.0.1
  */
-export function tail<A>(as: GeneratorFunction<A>): Option<GeneratorFunction<A>> {
+export function tail<A>(as: GeneratorFunction<A>): O.Option<GeneratorFunction<A>> {
   return isEmpty(as)
-    ? none
-    : some(function* () {
+    ? O.none
+    : O.some(function* () {
         const g = as()
         g.next() // discard head
         yield* g
@@ -1034,10 +1036,10 @@ export function tail<A>(as: GeneratorFunction<A>): Option<GeneratorFunction<A>> 
 /**
  * @since 0.0.1
  */
-export function init<A>(as: GeneratorFunction<A>): Option<GeneratorFunction<A>> {
+export function init<A>(as: GeneratorFunction<A>): O.Option<GeneratorFunction<A>> {
   return isEmpty(as)
-    ? none
-    : some(function* () {
+    ? O.none
+    : O.some(function* () {
         const g = as()
         const r = g.next()
         if (r.done === true) {
@@ -1049,4 +1051,28 @@ export function init<A>(as: GeneratorFunction<A>): Option<GeneratorFunction<A>> 
           prev = a
         }
       })
+}
+
+/**
+ * @since 0.0.1
+ */
+export const every = <A>(predicate: Predicate<A>) => (as: GeneratorFunction<A>): boolean => {
+  for (const a of as()) {
+    if (predicate(a) === false) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * @since 0.0.1
+ */
+export const some = <A>(predicate: Predicate<A>) => (as: GeneratorFunction<A>): boolean => {
+  for (const a of as()) {
+    if (predicate(a) === true) {
+      return true
+    }
+  }
+  return false
 }
