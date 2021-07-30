@@ -2,6 +2,7 @@
 import * as E from 'fp-ts/Either'
 // import * as Eq from 'fp-ts/Eq'
 // import { identity, pipe, Predicate, tuple } from 'fp-ts/function'
+import { Predicate } from 'fp-ts/Predicate'
 import { identity, pipe } from 'fp-ts/function'
 // import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
@@ -1060,6 +1061,7 @@ describe('GeneratorFunction', () => {
   it('apS', () => {
     expect(pipe(_.of(1), _.bindTo('a'), _.apS('b', _.of('b')))).toStrictEqual([{ a: 1, b: 'b' }])
   })
+*/
 
   it('every', () => {
     const isPositive: Predicate<number> = (n) => n > 0
@@ -1072,5 +1074,4 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([-1, -2, 3]), _.some(isPositive))).toStrictEqual(true)
     expect(pipe(_.fromArray([-1, -2, -3]), _.some(isPositive))).toStrictEqual(false)
   })
-*/
 })
