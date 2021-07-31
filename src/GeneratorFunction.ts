@@ -101,22 +101,6 @@ export const append = <A>(end: A) => (init: GeneratorFunction<A>): NEGF.NonEmpty
  * @category constructors
  * @since 0.0.1
  */
-export const takeLeft = <A>(count: number) => (as: GeneratorFunction<A>): GeneratorFunction<A> =>
-  function* () {
-    let i = 0
-    for (const a of as()) {
-      if (i >= count) {
-        return
-      }
-      yield a
-      i += 1
-    }
-  }
-
-/**
- * @category constructors
- * @since 0.0.1
- */
 export function replicate<A>(n: number, a: A): GeneratorFunction<A> {
   return pipe(repeat(a), takeLeft(n))
 }
@@ -282,6 +266,55 @@ export function unzip<A, B>(
       }
     },
   ]
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function union<A>(E: Eq<A>): (ys: GeneratorFunction<A>) => (xs: GeneratorFunction<A>) => GeneratorFunction<A> {
+  const elemE = elem(E)
+  return (ys) => (xs) => {
+    return concat(
+      xs,
+      pipe(
+        ys,
+        filter((a) => !pipe(xs, elemE(a))),
+      ),
+    )
+  }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function intersection<A>(
+  E: Eq<A>,
+): (ys: GeneratorFunction<A>) => (xs: GeneratorFunction<A>) => GeneratorFunction<A> {
+  const elemE = elem(E)
+  return (ys) => (xs) => {
+    return pipe(
+      xs,
+      filter((a) => pipe(ys, elemE(a))),
+    )
+  }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function difference<A>(
+  E: Eq<A>,
+): (ys: GeneratorFunction<A>) => (xs: GeneratorFunction<A>) => GeneratorFunction<A> {
+  const elemE = elem(E)
+  return (ys) => (xs) => {
+    return pipe(
+      xs,
+      filter((a) => !pipe(ys, elemE(a))),
+    )
+  }
 }
 
 /**
@@ -1065,6 +1098,139 @@ export function init<A>(as: GeneratorFunction<A>): O.Option<GeneratorFunction<A>
           prev = a
         }
       })
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export const takeLeft = <A>(count: number) => (as: GeneratorFunction<A>): GeneratorFunction<A> =>
+  function* () {
+    let i = 0
+    for (const a of as()) {
+      if (i >= count) {
+        return
+      }
+      yield a
+      i += 1
+    }
+  }
+
+/**
+ * @since 0.0.1
+ */
+export function takeRight(n: number): <A>(as: GeneratorFunction<A>) => GeneratorFunction<A> {
+  return (as) =>
+    function* () {
+      if (n === 0) {
+        return
+      }
+      const tmp = []
+      let i = 0
+      for (const a of as()) {
+        if (i >= n) {
+          i = 0
+        }
+        tmp[i] = a
+        i += 1
+      }
+      yield* RA.rotate(0 - i)(tmp)
+    }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+/*
+export function takeLeftWhile<A, B extends A>(refinement: Refinement<A, B>): (as: GeneratorFunction<A>) => GeneratorFunction<B>
+export function takeLeftWhile<A>(predicate: Predicate<A>): (as: GeneratorFunction<A>) => GeneratorFunction<A>
+export function takeLeftWhile<A>(predicate: Predicate<A>): (as: GeneratorFunction<A>) => GeneratorFunction<A> {
+  return (as) => {
+    const i = spanIndexUncurry(as, predicate)
+    const init = Array(i)
+    for (let j = 0; j < i; j++) {
+      init[j] = as[j]
+    }
+    return init
+  }
+}
+
+const spanIndexUncurry = <A>(as: GeneratorFunction<A>, predicate: Predicate<A>): number => {
+  const l = as.length
+  let i = 0
+  for (; i < l; i++) {
+    if (!predicate(as[i])) {
+      break
+    }
+  }
+  return i
+}
+
+/**
+ * @since 0.0.1
+ */
+/*
+export interface Spanned<I, R> {
+  readonly init: GeneratorFunction<I>
+  readonly rest: GeneratorFunction<R>
+}
+
+/**
+ * @since 0.0.1
+ */
+/*
+export function spanLeft<A, B extends A>(refinement: Refinement<A, B>): (as: GeneratorFunction<A>) => Spanned<B, A>
+export function spanLeft<A>(predicate: Predicate<A>): (as: GeneratorFunction<A>) => Spanned<A, A>
+export function spanLeft<A>(predicate: Predicate<A>): (as: GeneratorFunction<A>) => Spanned<A, A> {
+  return (as) => {
+    const i = spanIndexUncurry(as, predicate)
+    const init = Array(i)
+    for (let j = 0; j < i; j++) {
+      init[j] = as[j]
+    }
+    const l = as.length
+    const rest = Array(l - i)
+    for (let j = i; j < l; j++) {
+      rest[j - i] = as[j]
+    }
+    return { init, rest }
+  }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+/*
+export function dropLeft(n: number): <A>(as: GeneratorFunction<A>) => GeneratorFunction<A> {
+  return (as) => as.slice(n, as.length)
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+/*
+export function dropRight(n: number): <A>(as: GeneratorFunction<A>) => GeneratorFunction<A> {
+  return (as) => as.slice(0, as.length - n)
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+/*
+export function dropLeftWhile<A>(predicate: Predicate<A>): (as: GeneratorFunction<A>) => GeneratorFunction<A> {
+  return (as) => {
+    const i = spanIndexUncurry(as, predicate)
+    const l = as.length
+    const rest = Array(l - i)
+    for (let j = i; j < l; j++) {
+      rest[j - i] = as[j]
+    }
+    return rest
+  }
 }
 
 /**

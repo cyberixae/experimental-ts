@@ -222,6 +222,13 @@ describe('GeneratorFunction', () => {
         ),
       ).toStrictEqual([1, 1, 2, 2, 3, 3])
     })
+    /*
+    it('extend', () => {
+      const sum = (as: _.GeneratorFunction<number>) => M.fold(M.monoidSum)(as)
+      expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(sum), _.toArray)).toStrictEqual([10, 9, 7, 4])
+      expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(identity))).toStrictEqual([[1, 2, 3, 4], [2, 3, 4], [3, 4], [4]])
+    })
+*/
 
     it('foldMap', () => {
       expect(pipe(_.fromArray(['a', 'b', 'c']), _.foldMap(monoidString)(identity))).toStrictEqual('abc')
@@ -390,6 +397,10 @@ describe('GeneratorFunction', () => {
   })
 
   /*
+  it('duplicate', () => {
+    expect(pipe(_.fromArray(['a', 'b']), _.duplicate, _.toArray)).toStrictEqual([['a', 'b'], ['b']])
+  })
+
   it('getMonoid', () => {
     const M = _.getMonoid<number>()
     expect(M.concat([1, 2], [3, 4])).toStrictEqual([1, 2, 3, 4])
@@ -505,15 +516,17 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([1, 2, 3]), _.takeLeft(2), _.toArray)).toStrictEqual([1, 2])
   })
 
-  /*
   it('takeRight', () => {
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(2) , _.toArray).toStrictEqual([4, 5])
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(0) , _.toArray).toStrictEqual([])
-    expect(pipe(_.fromArray([]             ), _.takeRight(2) , _.toArray).toStrictEqual([])
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(5) , _.toArray).toStrictEqual([1, 2, 3, 4, 5])
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(10), _.toArray).toStrictEqual([1, 2, 3, 4, 5])
+    expect(pipe(_.fromArray([]), _.takeRight(2), _.toArray)).toStrictEqual([])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(0), _.toArray)).toStrictEqual([])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(1), _.toArray)).toStrictEqual([5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(2), _.toArray)).toStrictEqual([4, 5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(3), _.toArray)).toStrictEqual([3, 4, 5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(4), _.toArray)).toStrictEqual([2, 3, 4, 5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(5), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.takeRight(10), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
   })
-
+  /*
   it('spanLeft', () => {
     expect(pipe(_.fromArray([1, 3, 2, 4, 5]), _.spanLeft((n: number) => n % 2 === 1))).toStrictEqual({ init: [1, 3], rest: [2, 4, 5] })
   })
@@ -672,6 +685,25 @@ describe('GeneratorFunction', () => {
   })
 
 */
+
+  it('union', () => {
+    expect(pipe(_.fromArray([1, 2]), _.union(eqNumber)(_.fromArray([3, 4])), _.toArray)).toStrictEqual([1, 2, 3, 4])
+    expect(pipe(_.fromArray([1, 2]), _.union(eqNumber)(_.fromArray([2, 3])), _.toArray)).toStrictEqual([1, 2, 3])
+    expect(pipe(_.fromArray([1, 2]), _.union(eqNumber)(_.fromArray([1, 2])), _.toArray)).toStrictEqual([1, 2])
+  })
+
+  it('intersection', () => {
+    expect(pipe(_.fromArray([1, 2]), _.intersection(eqNumber)(_.fromArray([3, 4])), _.toArray)).toStrictEqual([])
+    expect(pipe(_.fromArray([1, 2]), _.intersection(eqNumber)(_.fromArray([2, 3])), _.toArray)).toStrictEqual([2])
+    expect(pipe(_.fromArray([1, 2]), _.intersection(eqNumber)(_.fromArray([1, 2])), _.toArray)).toStrictEqual([1, 2])
+  })
+
+  it('difference', () => {
+    expect(pipe(_.fromArray([1, 2]), _.difference(eqNumber)(_.fromArray([3, 4])), _.toArray)).toStrictEqual([1, 2])
+    expect(pipe(_.fromArray([1, 2]), _.difference(eqNumber)(_.fromArray([2, 3])), _.toArray)).toStrictEqual([1])
+    expect(pipe(_.fromArray([1, 2]), _.difference(eqNumber)(_.fromArray([1, 2])), _.toArray)).toStrictEqual([])
+  })
+
   it('sort', () => {
     const order = pipe(
       ordNumber,
