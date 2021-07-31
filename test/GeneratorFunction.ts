@@ -1,15 +1,16 @@
 // import * as fc from 'fast-check'
 import * as E from 'fp-ts/Either'
-// import * as Eq from 'fp-ts/Eq'
+import { Eq as eqNumber, Ord as ordNumber } from 'fp-ts/number'
+import { Monoid as monoidString } from 'fp-ts/string'
+// import { Eq as eqString, Ord as ordString, Monoid as monoidString } from 'fp-ts/string'
 // import { identity, pipe, Predicate, tuple } from 'fp-ts/function'
 import { Predicate } from 'fp-ts/Predicate'
 import { identity, pipe } from 'fp-ts/function'
 // import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Record_ from 'fp-ts/Record'
-// import * as Ord from 'fp-ts/Ord'
+import * as Ord from 'fp-ts/Ord'
 import * as T from 'fp-ts/Task'
-import * as string_ from 'fp-ts/string'
 
 import * as _ from '../src/GeneratorFunction'
 
@@ -97,21 +98,17 @@ describe('GeneratorFunction', () => {
         ),
       ).toStrictEqual(O.none)
     })
-    /*
+
     it('lookup', () => {
-      expect(_.lookup(0, _.fromArray([1, 2, 3]))).toStrictEqual(O.some(1))
-      expect(_.lookup(3, _.fromArray([1, 2, 3]))).toStrictEqual(O.none)
       expect(pipe(_.fromArray([1, 2, 3]), _.lookup(0))).toStrictEqual(O.some(1))
       expect(pipe(_.fromArray([1, 2, 3]), _.lookup(3))).toStrictEqual(O.none)
     })
 
     it('elem', () => {
-      expect(pipe(_.elem(Eq.eqNumber)(2, _.fromArray([1, 2, 3]))).toStrictEqual(true)
-      expect(pipe(_.elem(Eq.eqNumber)(0, _.fromArray([1, 2, 3]))).toStrictEqual(false)
-      expect(pipe(_.fromArray([1, 2, 3]), _.elem(Eq.eqNumber)(2))).toStrictEqual(true)
-      expect(pipe(_.fromArray([1, 2, 3]), _.elem(Eq.eqNumber)(0))).toStrictEqual(false)
+      expect(pipe(_.fromArray([1, 2, 3]), _.elem(eqNumber)(2))).toStrictEqual(true)
+      expect(pipe(_.fromArray([1, 2, 3]), _.elem(eqNumber)(0))).toStrictEqual(false)
     })
-*/
+
     it('unfold', () => {
       const as = _.unfold(5, (n) => (n > 0 ? O.some([n, n - 1]) : O.none))
       expect(_.toArray(as)).toStrictEqual([5, 4, 3, 2, 1])
@@ -227,8 +224,8 @@ describe('GeneratorFunction', () => {
     })
 
     it('foldMap', () => {
-      expect(pipe(_.fromArray(['a', 'b', 'c']), _.foldMap(string_.Monoid)(identity))).toStrictEqual('abc')
-      expect(pipe(_.fromArray([]), _.foldMap(string_.Monoid)(identity))).toStrictEqual('')
+      expect(pipe(_.fromArray(['a', 'b', 'c']), _.foldMap(monoidString)(identity))).toStrictEqual('abc')
+      expect(pipe(_.fromArray([]), _.foldMap(monoidString)(identity))).toStrictEqual('')
     })
 
     it('compact', () => {
@@ -269,7 +266,7 @@ describe('GeneratorFunction', () => {
       expect(
         pipe(
           _.fromArray(['a', 'b']),
-          _.foldMapWithIndex(string_.Monoid)((i, a) => i + a),
+          _.foldMapWithIndex(monoidString)((i, a) => i + a),
         ),
       ).toStrictEqual('0a1b')
     })
@@ -437,6 +434,7 @@ describe('GeneratorFunction', () => {
     expect(O.compare(['b', 'b'], ['b', 'a'])).toStrictEqual(1, '[b, b], [b, a]')
     expect(O.compare(['b', 'a'], ['b', 'b'])).toStrictEqual(-1, '[b, a], [b, b]')
   })
+*/
 
   it('isEmpty', () => {
     const as: _.GeneratorFunction<number> = _.fromArray([1, 2, 3])
@@ -449,7 +447,6 @@ describe('GeneratorFunction', () => {
     expect(_.isNonEmpty(as)).toStrictEqual(true)
     expect(_.isNonEmpty(_.empty)).toStrictEqual(false)
   })
-*/
 
   it('prepend', () => {
     expect(pipe(_.fromArray([1, 2, 3]), _.prepend(0), _.toArray)).toStrictEqual([0, 1, 2, 3])
@@ -674,29 +671,30 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.empty, _.modifyAt(1, double))).toStrictEqual(O.none)
   })
 
+*/
   it('sort', () => {
-    const O = pipe(
-      Ord.ordNumber,
-      Ord.contramap((x: { readonly a: number }) => x.a)
+    const order = pipe(
+      ordNumber,
+      Ord.contramap((x: { readonly a: number }) => x.a),
     )
     expect(
-      pipe(_.fromArray(
-        [
+      pipe(
+        _.fromArray([
           { a: 3, b: 'b1' },
           { a: 2, b: 'b2' },
-          { a: 1, b: 'b3' }
+          { a: 1, b: 'b3' },
         ]),
-        _.sort(O)
-      )).toStrictEqual(
-      [
-        { a: 1, b: 'b3' },
-        { a: 2, b: 'b2' },
-        { a: 3, b: 'b1' }
-      ]
-    )
-    expect(strictEqual(_.sort(Ord.ordNumber)(_.empty)).toStrictEqual(_.empty)
+        _.sort(order),
+        _.toArray,
+      ),
+    ).toStrictEqual([
+      { a: 1, b: 'b3' },
+      { a: 2, b: 'b2' },
+      { a: 3, b: 'b1' },
+    ])
+    expect(pipe(_.empty, _.sort(ordNumber))).toStrictEqual(_.empty)
   })
-*/
+
   it('zipWith', () => {
     expect(
       pipe(
@@ -815,7 +813,7 @@ describe('GeneratorFunction', () => {
     }
 
     const eqA = pipe(
-      Ord.ordNumber,
+      ordNumber,
       Eq.contramap((f: A) => f.b)
     )
     const arrA: A = { a: 'a', b: 1 }
@@ -831,15 +829,15 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([arrA, arrC]                  ), _.uniq(eqA), _.toArray)).toStrictEqual([arrA, arrC])
     expect(pipe(_.fromArray([arrC, arrA]                  ), _.uniq(eqA), _.toArray)).toStrictEqual([arrC, arrA])
     expect(pipe(_.fromArray(([true, false, true, false]), _.uniq(Eq.eqBoolean), _.toArray)).toStrictEqual([true, false])
-    expect(pipe(_.fromArray([]                            ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([])
-    expect(pipe(_.fromArray([-0, -0]                      ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([-0])
-    expect(pipe(_.fromArray([0, -0]                       ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([0])
-    expect(pipe(_.fromArray([1]                           ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([1])
-    expect(pipe(_.fromArray([2, 1, 2]                     ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([2, 1])
-    expect(pipe(_.fromArray([1, 2, 1]                     ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([1, 2])
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]               ), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
-    expect(pipe(_.fromArray([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5, 1, 2, 3, 4, 5]), _.uniq(Eq.eqNumber), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
+    expect(pipe(_.fromArray([]                            ), _.uniq(eqNumber), _.toArray)).toStrictEqual([])
+    expect(pipe(_.fromArray([-0, -0]                      ), _.uniq(eqNumber), _.toArray)).toStrictEqual([-0])
+    expect(pipe(_.fromArray([0, -0]                       ), _.uniq(eqNumber), _.toArray)).toStrictEqual([0])
+    expect(pipe(_.fromArray([1]                           ), _.uniq(eqNumber), _.toArray)).toStrictEqual([1])
+    expect(pipe(_.fromArray([2, 1, 2]                     ), _.uniq(eqNumber), _.toArray)).toStrictEqual([2, 1])
+    expect(pipe(_.fromArray([1, 2, 1]                     ), _.uniq(eqNumber), _.toArray)).toStrictEqual([1, 2])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]               ), _.uniq(eqNumber), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
+    expect(pipe(_.fromArray([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]), _.uniq(eqNumber), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5, 1, 2, 3, 4, 5]), _.uniq(eqNumber), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
     expect(pipe(_.fromArray(['a', 'b', 'a']               ), _.uniq(Eq.eqString), _.toArray)).toStrictEqual(['a', 'b'])
     expect(pipe(_.fromArray(['a', 'b', 'A']               ), _.uniq(Eq.eqString), _.toArray)).toStrictEqual(['a', 'b', 'A'])
   })
@@ -855,7 +853,7 @@ describe('GeneratorFunction', () => {
       Ord.contramap((p: { readonly a: string; readonly b: number }) => p.a)
     )
     const byAge = pipe(
-      Ord.ordNumber,
+      ordNumber,
       Ord.contramap((p: { readonly a: string; readonly b: number }) => p.b)
     )
     const f = _.sortBy([byName, byAge])
@@ -889,7 +887,7 @@ describe('GeneratorFunction', () => {
         return [init, rest]
       })
     }
-    expect(group(Eq.eqNumber)([1, 1, 2, 3, 3, 4])).toStrictEqual([[1, 1], [2], [3, 3], [4]])
+    expect(group(eqNumber)([1, 1, 2, 3, 3, 4])).toStrictEqual([[1, 1], [2], [3, 3], [4]])
   })
 
   it('splitAt', () => {

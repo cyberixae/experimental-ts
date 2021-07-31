@@ -9,6 +9,8 @@ import { Applicative as ApplicativeHKT, Applicative1 } from 'fp-ts/Applicative'
 import { Compactable1 } from 'fp-ts/Compactable'
 import { Separated } from 'fp-ts/Separated'
 import { Either } from 'fp-ts/Either'
+import { Eq } from 'fp-ts/Eq'
+import { Ord } from 'fp-ts/Ord'
 import { Filter1, Filterable1, Partition1 } from 'fp-ts/Filterable'
 import {
   FilterableWithIndex1,
@@ -34,7 +36,7 @@ import { Unfoldable1 } from 'fp-ts/Unfoldable'
 import { PipeableWilt1, PipeableWither1, Witherable1 } from 'fp-ts/Witherable'
 
 import { InfiniteGeneratorFunction, repeat } from './InfiniteGeneratorFunction'
-import { NonEmptyGeneratorFunction } from './NonEmptyGeneratorFunction'
+import * as NEGF from './NonEmptyGeneratorFunction'
 import { sighting } from './Sighting'
 
 // -------------------------------------------------------------------------------------
@@ -77,7 +79,7 @@ export const generatorFunction = <A>(as: GeneratorFunction<A>) => as
  * @category constructors
  * @since 0.0.1
  */
-export const prepend = <A>(head: A) => (tail: GeneratorFunction<A>): NonEmptyGeneratorFunction<A> =>
+export const prepend = <A>(head: A) => (tail: GeneratorFunction<A>): NEGF.NonEmptyGeneratorFunction<A> =>
   function* () {
     yield head
     yield* tail()
@@ -88,7 +90,7 @@ export const prepend = <A>(head: A) => (tail: GeneratorFunction<A>): NonEmptyGen
  * @category constructors
  * @since 0.0.1
  */
-export const append = <A>(end: A) => (init: GeneratorFunction<A>): NonEmptyGeneratorFunction<A> =>
+export const append = <A>(end: A) => (init: GeneratorFunction<A>): NEGF.NonEmptyGeneratorFunction<A> =>
   function* () {
     yield* init()
     yield end
@@ -225,7 +227,13 @@ export const apSecond = <B>(fb: GeneratorFunction<B>): (<A>(fa: GeneratorFunctio
  * @category combinators
  * @since 0.0.1
  */
+export const sort = <B>(O: Ord<B>) => <A extends B>(as: GeneratorFunction<A>): GeneratorFunction<A> =>
+  isNonEmpty(as) ? NEGF.sort(O)(as) : as
 
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
 export function zipWith<A, B, C>(
   fb: GeneratorFunction<B>,
   f: (a: A, b: B) => C,
@@ -1003,7 +1011,7 @@ export function isEmpty<A>(as: GeneratorFunction<A>): boolean {
 /**
  * @since 0.0.1
  */
-export function isNonEmpty<A>(as: GeneratorFunction<A>): as is NonEmptyGeneratorFunction<A> {
+export function isNonEmpty<A>(as: GeneratorFunction<A>): as is NEGF.NonEmptyGeneratorFunction<A> {
   return as().next().done !== true
 }
 
@@ -1077,6 +1085,33 @@ export const every = <A>(predicate: Predicate<A>) => (as: GeneratorFunction<A>):
 export const some = <A>(predicate: Predicate<A>) => (as: GeneratorFunction<A>): boolean => {
   for (const a of as()) {
     if (predicate(a) === true) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * @since 0.0.1
+ */
+export const lookup = (i: number) => <A>(as: GeneratorFunction<A>): O.Option<A> => {
+  let ii = 0
+  for (const a of as()) {
+    if (ii === i) {
+      return O.some(a)
+    }
+    ii += 1
+  }
+  return O.none
+}
+
+/**
+ * @since 0.0.1
+ */
+export const elem = <A>(E: Eq<A>) => (a: A) => (as: GeneratorFunction<A>): boolean => {
+  const predicate = (element: A) => E.equals(element, a)
+  for (const a of as()) {
+    if (predicate(a)) {
       return true
     }
   }
