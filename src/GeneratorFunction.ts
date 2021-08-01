@@ -9,6 +9,7 @@ import { Applicative as ApplicativeHKT, Applicative1 } from 'fp-ts/Applicative'
 import { Compactable1 } from 'fp-ts/Compactable'
 import { Separated } from 'fp-ts/Separated'
 import { Either } from 'fp-ts/Either'
+import { Extend1 } from 'fp-ts/Extend'
 import { Eq } from 'fp-ts/Eq'
 import { Ord } from 'fp-ts/Ord'
 import { Filter1, Filterable1, Partition1 } from 'fp-ts/Filterable'
@@ -48,12 +49,6 @@ import { sighting } from './Sighting'
  * @since 0.0.1
  */
 export type GeneratorFunction<A> = () => Generator<A, unknown, undefined>
-
-const concat = <A, B>(x: GeneratorFunction<A>, y: GeneratorFunction<B>): GeneratorFunction<A | B> =>
-  function* () {
-    yield* x()
-    yield* y()
-  }
 
 // -------------------------------------------------------------------------------------
 // constructors
@@ -171,7 +166,7 @@ export const zero: Alternative1<URI>['zero'] = () => empty
  */
 export const altW: <B>(
   that: Lazy<GeneratorFunction<B>>,
-) => <A>(fa: GeneratorFunction<A>) => GeneratorFunction<A | B> = (that) => (fa) => concat(fa, that())
+) => <A>(fa: GeneratorFunction<A>) => GeneratorFunction<A | B> = (that) => (fa) => pipe(fa, concatW(that()))
 
 /**
  * @category Alt
@@ -272,14 +267,36 @@ export function unzip<A, B>(
  * @category combinators
  * @since 0.0.1
  */
+export const concatW = <B>(second: GeneratorFunction<B>) => <A>(
+  first: GeneratorFunction<A>,
+): GeneratorFunction<A | B> =>
+  function* () {
+    yield* first()
+    yield* second()
+  }
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export const concat: <A>(
+  second: GeneratorFunction<A>,
+) => (first: GeneratorFunction<A>) => GeneratorFunction<A> = concatW
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
 export function union<A>(E: Eq<A>): (ys: GeneratorFunction<A>) => (xs: GeneratorFunction<A>) => GeneratorFunction<A> {
   const elemE = elem(E)
   return (ys) => (xs) => {
-    return concat(
+    return pipe(
       xs,
-      pipe(
-        ys,
-        filter((a) => !pipe(xs, elemE(a))),
+      concat(
+        pipe(
+          ys,
+          filter((a) => !pipe(xs, elemE(a))),
+        ),
       ),
     )
   }
@@ -563,6 +580,28 @@ export const filterWithIndex: {
   }
 
 /**
+ * @category Extend
+ * @since 0.0.1
+ */
+export const extend: <A, B>(
+  f: (fa: GeneratorFunction<A>) => B,
+) => (wa: GeneratorFunction<A>) => GeneratorFunction<B> = (f) => (wa) =>
+  pipe(
+    wa,
+    mapWithIndex((i) => f(pipe(wa, dropLeft(i)))),
+  )
+
+/**
+ * Derivable from `Extend`.
+ *
+ * @category combinators
+ * @since 0.0.1
+ */
+export const duplicate: <A>(wa: GeneratorFunction<A>) => GeneratorFunction<GeneratorFunction<A>> =
+  /*#__PURE__*/
+  extend(identity)
+
+/**
  * @category FoldableWithIndex
  * @since 0.0.1
  */
@@ -748,6 +787,7 @@ const filterWithIndex_ = <A>(
   fa: GeneratorFunction<A>,
   predicateWithIndex: (i: number, a: A) => boolean,
 ): GeneratorFunction<A> => pipe(fa, filterWithIndex(predicateWithIndex))
+const extend_: Extend1<URI>['extend'] = (fa, f) => pipe(fa, extend(f))
 const traverse_ = <F>(
   F: ApplicativeHKT<F>,
 ): (<A, B>(ta: GeneratorFunction<A>, f: (a: A) => HKT<F, B>) => HKT<F, GeneratorFunction<B>>) => {
@@ -873,6 +913,16 @@ export const Alternative: Alternative1<URI> = {
   of,
   alt: alt_,
   zero,
+}
+
+/**
+ * @category instances
+ * @since 0.0.1
+ */
+export const Extend: Extend1<URI> = {
+  URI,
+  map: map_,
+  extend: extend_,
 }
 
 /**
@@ -1049,6 +1099,75 @@ export function isNonEmpty<A>(as: GeneratorFunction<A>): as is NEGF.NonEmptyGene
 }
 
 /**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function rights<E, A>(as: GeneratorFunction<Either<E, A>>): GeneratorFunction<A> {
+  return function* () {
+    for (const a of as()) {
+      if (a._tag === 'Right') {
+        yield a.right
+      }
+    }
+  }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function lefts<E, A>(as: GeneratorFunction<Either<E, A>>): GeneratorFunction<E> {
+  return function* () {
+    for (const a of as()) {
+      if (a._tag === 'Left') {
+        yield a.left
+      }
+    }
+  }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function flatten<A>(mma: GeneratorFunction<GeneratorFunction<A>>): GeneratorFunction<A> {
+  return function* () {
+    for (const ma of mma()) {
+      yield* ma()
+    }
+  }
+}
+
+/**
+ * @category combinators
+ * @since 0.0.1
+ */
+export function interleave<A>(mma: GeneratorFunction<GeneratorFunction<A>>): GeneratorFunction<A> {
+  return function* () {
+    const gs = []
+    for (const ma of mma()) {
+      const g = ma()
+      const r = g.next()
+      if (r.done !== true) {
+        yield r.value
+        gs.push(g)
+      }
+    }
+    let i = 0
+    while (gs.length > 0) {
+      const g = gs[i % gs.length]
+      const r = g.next()
+      if (r.done !== true) {
+        yield r.value
+        i += 1
+      } else {
+        gs.splice(i % gs.length, 1)
+      }
+    }
+  }
+}
+
+/**
  * @since 0.0.1
  */
 export function head<A>(as: GeneratorFunction<A>): O.Option<A> {
@@ -1128,13 +1247,10 @@ export function takeRight(n: number): <A>(as: GeneratorFunction<A>) => Generator
       const tmp = []
       let i = 0
       for (const a of as()) {
-        if (i >= n) {
-          i = 0
-        }
-        tmp[i] = a
+        tmp[i % n] = a
         i += 1
       }
-      yield* RA.rotate(0 - i)(tmp)
+      yield* RA.rotate(0 - (i % n))(tmp)
     }
 }
 
@@ -1202,18 +1318,40 @@ export function spanLeft<A>(predicate: Predicate<A>): (as: GeneratorFunction<A>)
  * @category combinators
  * @since 0.0.1
  */
-/*
 export function dropLeft(n: number): <A>(as: GeneratorFunction<A>) => GeneratorFunction<A> {
-  return (as) => as.slice(n, as.length)
+  return (as) =>
+    function* () {
+      const g = as()
+      let i = 0
+      while (i < n) {
+        g.next() // discard head
+        i += 1
+      }
+      yield* g
+    }
 }
 
 /**
  * @category combinators
  * @since 0.0.1
  */
-/*
 export function dropRight(n: number): <A>(as: GeneratorFunction<A>) => GeneratorFunction<A> {
-  return (as) => as.slice(0, as.length - n)
+  return (as) => {
+    if (n === 0) {
+      return as
+    }
+    return function* () {
+      const tmp = []
+      let i = 0
+      for (const a of as()) {
+        if (i >= n) {
+          yield tmp[i % n]
+        }
+        tmp[i % n] = a
+        i += 1
+      }
+    }
+  }
 }
 
 /**
