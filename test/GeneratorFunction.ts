@@ -11,6 +11,7 @@ import * as O from 'fp-ts/Option'
 import * as Record_ from 'fp-ts/Record'
 import * as Ord from 'fp-ts/Ord'
 import * as T from 'fp-ts/Task'
+import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/GeneratorFunction'
 
@@ -226,7 +227,12 @@ describe('GeneratorFunction', () => {
     it('extend', () => {
       const sum = (as: _.GeneratorFunction<number>) => M.fold(M.monoidSum)(as)
       expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(sum), _.toArray)).toStrictEqual([10, 9, 7, 4])
-      expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(identity))).toStrictEqual([[1, 2, 3, 4], [2, 3, 4], [3, 4], [4]])
+      expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(identity), _.toArray, RA.map(_.toArray))).toStrictEqual([
+        [1, 2, 3, 4],
+        [2, 3, 4],
+        [3, 4],
+        [4],
+      ])
     })
 */
 
@@ -398,7 +404,7 @@ describe('GeneratorFunction', () => {
 
   /*
   it('duplicate', () => {
-    expect(pipe(_.fromArray(['a', 'b']), _.duplicate, _.toArray)).toStrictEqual([['a', 'b'], ['b']])
+    expect(pipe(_.fromArray(['a', 'b']), _.duplicate, _.toArray, RA.map(_.toArray))).toStrictEqual([['a', 'b'], ['b']])
   })
 
   it('getMonoid', () => {
@@ -538,19 +544,21 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.fromArray([1, 2, 4]   ), _.takeLeftWhile(f), _.toArray)).toStrictEqual([])
     expect(pipe(_.fromArray([2, 4]      ), _.takeLeftWhile(f), _.toArray)).toStrictEqual([2, 4])
   })
+*/
 
   it('dropLeft', () => {
-    expect(pipe(_.fromArray([1, 2, 3]), _.dropLeft(2) , _.toArray)).toStrictEqual([3])
+    expect(pipe(_.fromArray([1, 2, 3]), _.dropLeft(2), _.toArray)).toStrictEqual([3])
     expect(pipe(_.fromArray([1, 2, 3]), _.dropLeft(10), _.toArray)).toStrictEqual([])
-    expect(pipe(_.fromArray([1, 2, 3]), _.dropLeft(0) , _.toArray)).toStrictEqual([1, 2, 3])
+    expect(pipe(_.fromArray([1, 2, 3]), _.dropLeft(0), _.toArray)).toStrictEqual([1, 2, 3])
   })
 
   it('dropRight', () => {
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.dropRight(2) , _.toArray)).toStrictEqual([1, 2, 3])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.dropRight(2), _.toArray)).toStrictEqual([1, 2, 3])
     expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.dropRight(10), _.toArray)).toStrictEqual([])
-    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.dropRight(0) , _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
+    expect(pipe(_.fromArray([1, 2, 3, 4, 5]), _.dropRight(0), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
   })
 
+  /*
   it('dropLeftWhile', () => {
     const f = (n: number) => n % 2 === 0
     const g = (n: number) => n % 2 === 1
@@ -761,10 +769,10 @@ describe('GeneratorFunction', () => {
       ['a', 'b', 'c'],
     ])
   })
-  /*
+
   it('rights', () => {
     expect(pipe(_.fromArray([E.right(1), E.left('foo'), E.right(2)]), _.rights, _.toArray)).toStrictEqual([1, 2])
-    expect(pipe(_.empty, _.rights)).toStrictEqual([])
+    expect(pipe(_.empty, _.rights, _.toArray)).toStrictEqual([])
   })
 
   it('lefts', () => {
@@ -773,9 +781,20 @@ describe('GeneratorFunction', () => {
   })
 
   it('flatten', () => {
-    expect(pipe(_.fromArray([ _.of(1), _.of(2), _.of(3)]), _.flatten, _.toArray)).toStrictEqual([1, 2, 3])
+    expect(pipe(_.fromArray([_.of(1), _.of(2), _.of(3)]), _.flatten, _.toArray)).toStrictEqual([1, 2, 3])
   })
 
+  it('interleave', () => {
+    expect(
+      pipe(
+        _.fromArray([_.fromArray([1, 2, 3, 4]), _.fromArray([0, 5, 10, 15]), _.fromArray([2, 4, 6, 8])]),
+        _.interleave,
+        _.toArray,
+      ),
+    ).toStrictEqual([1, 0, 2, 2, 5, 4, 3, 10, 6, 4, 15, 8])
+  })
+
+  /*
   it('prependToAll', () => {
     expect(pipe(_.fromArray([1, 2, 3]   ), _.prependToAll(0), _.toArray)).toStrictEqual([0, 1, 0, 2, 0, 3])
     expect(pipe(_.fromArray([]          ), _.prependToAll(0), _.toArray)).toStrictEqual([])
