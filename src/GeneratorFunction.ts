@@ -1128,6 +1128,28 @@ export function lefts<E, A>(as: GeneratorFunction<Either<E, A>>): GeneratorFunct
 }
 
 /**
+ * @category constructors
+ * @since 0.0.1
+ */
+export function makeBy<A>(n: number, f: (i: number) => A): GeneratorFunction<A> {
+  return function* () {
+    let i = 0
+    while (i < n) {
+      yield f(i)
+      i += 1
+    }
+  }
+}
+
+/**
+ * @category constructors
+ * @since 0.0.1
+ */
+export function range(start: number, end: number): GeneratorFunction<number> {
+  return makeBy(end - start + 1, (i) => start + i)
+}
+
+/**
  * @category combinators
  * @since 0.0.1
  */

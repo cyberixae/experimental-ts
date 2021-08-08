@@ -1,12 +1,12 @@
 // import * as fc from 'fast-check'
 import * as E from 'fp-ts/Either'
-import { Eq as eqNumber, Ord as ordNumber } from 'fp-ts/number'
+import { Eq as eqNumber, Ord as ordNumber, MonoidSum } from 'fp-ts/number'
 import { Monoid as monoidString } from 'fp-ts/string'
 // import { Eq as eqString, Ord as ordString, Monoid as monoidString } from 'fp-ts/string'
 // import { identity, pipe, Predicate, tuple } from 'fp-ts/function'
 import { Predicate } from 'fp-ts/Predicate'
 import { identity, pipe } from 'fp-ts/function'
-// import * as M from 'fp-ts/Monoid'
+import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Record_ from 'fp-ts/Record'
 import * as Ord from 'fp-ts/Ord'
@@ -223,9 +223,9 @@ describe('GeneratorFunction', () => {
         ),
       ).toStrictEqual([1, 1, 2, 2, 3, 3])
     })
-    /*
+
     it('extend', () => {
-      const sum = (as: _.GeneratorFunction<number>) => M.fold(M.monoidSum)(as)
+      const sum = (as: _.GeneratorFunction<number>) => M.concatAll(MonoidSum)(_.toArray(as))
       expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(sum), _.toArray)).toStrictEqual([10, 9, 7, 4])
       expect(pipe(_.fromArray([1, 2, 3, 4]), _.extend(identity), _.toArray, RA.map(_.toArray))).toStrictEqual([
         [1, 2, 3, 4],
@@ -234,7 +234,6 @@ describe('GeneratorFunction', () => {
         [4],
       ])
     })
-*/
 
     it('foldMap', () => {
       expect(pipe(_.fromArray(['a', 'b', 'c']), _.foldMap(monoidString)(identity))).toStrictEqual('abc')
@@ -402,11 +401,11 @@ describe('GeneratorFunction', () => {
     })
   })
 
-  /*
   it('duplicate', () => {
     expect(pipe(_.fromArray(['a', 'b']), _.duplicate, _.toArray, RA.map(_.toArray))).toStrictEqual([['a', 'b'], ['b']])
   })
 
+  /*
   it('getMonoid', () => {
     const M = _.getMonoid<number>()
     expect(M.concat([1, 2], [3, 4])).toStrictEqual([1, 2, 3, 4])
@@ -996,6 +995,7 @@ describe('GeneratorFunction', () => {
       )
     })
   })
+*/
 
   it('makeBy', () => {
     const double = (n: number): number => n * 2
@@ -1007,7 +1007,6 @@ describe('GeneratorFunction', () => {
     expect(pipe(_.range(1, 5), _.toArray)).toStrictEqual([1, 2, 3, 4, 5])
     expect(pipe(_.range(10, 15), _.toArray)).toStrictEqual([10, 11, 12, 13, 14, 15])
   })
-*/
 
   it('replicate', () => {
     expect(pipe(_.replicate(0, 'a'), _.toArray)).toStrictEqual([])
