@@ -15,6 +15,26 @@ import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/GeneratorFunction'
 
+function evaluate<A>(gf: _.GeneratorFunction<A>): Array<A> {
+  const g = gf()
+  const tmp: Array<A> = []
+  while (true) {
+    const r = g.next()
+    if (r.done === true) {
+      const report: any = (r.value ?? {}) as {}
+      if (report.hasOwnProperty('sample') === false) {
+        return tmp
+      }
+      if (tmp.includes(report?.sample)) {
+        return tmp
+      }
+      throw new Error('Does not yield sample')
+    } else {
+      tmp.push(r.value)
+    }
+  }
+}
+
 describe('GeneratorFunction', () => {
   it('toIterable', () => {
     expect(Array.from(_.toIterable(_.empty))).toStrictEqual([])
@@ -481,7 +501,7 @@ describe('GeneratorFunction', () => {
           yield 3
         }),
         _.append(4),
-        _.toArray,
+        evaluate,
       ),
     ).toStrictEqual([1, 2, 3, 4])
   })
