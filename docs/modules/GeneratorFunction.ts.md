@@ -126,6 +126,7 @@ Added in v0.0.1
 
 ```ts
 export declare function toArray<A>(as: InfiniteGeneratorFunction<A>): never
+export declare function toArray<A>(as: NonEmptyGeneratorFunction<A>): ReadonlyNonEmptyArray<A>
 export declare function toArray<A>(as: GeneratorFunction<A>): ReadonlyArray<A>
 ```
 
