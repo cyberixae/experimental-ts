@@ -2,9 +2,9 @@
  * @since 0.0.1
  */
 
+import { ReadonlyNonEmptyArray } from 'fp-ts/ReadonlyNonEmptyArray'
 import { InfiniteGeneratorFunction } from './InfiniteGeneratorFunction'
-import { NonEmptyGeneratorFunction } from './NonEmptyGeneratorFunction'
-import { tombstone } from './Tombstone'
+import { NonEmptyGeneratorFunction, report } from './NonEmptyGeneratorFunction'
 
 // -------------------------------------------------------------------------------------
 // model
@@ -44,7 +44,7 @@ export const prepend = <A>(head: A) => (tail: GeneratorFunction<A>): NonEmptyGen
   function* () {
     yield head
     yield* tail()
-    return tombstone(head)
+    return report(head)
   }
 
 /**
@@ -55,7 +55,7 @@ export const append = <A>(end: A) => (init: GeneratorFunction<A>): NonEmptyGener
   function* () {
     yield* init()
     yield end
-    return tombstone(end)
+    return report(end)
   }
 
 /**
@@ -128,6 +128,7 @@ export function toIterable<A>(as: GeneratorFunction<A>): Iterable<A> {
  * @since 0.0.1
  */
 export function toArray<A>(as: InfiniteGeneratorFunction<A>): never
+export function toArray<A>(as: NonEmptyGeneratorFunction<A>): ReadonlyNonEmptyArray<A>
 export function toArray<A>(as: GeneratorFunction<A>): ReadonlyArray<A>
 export function toArray<A>(as: GeneratorFunction<A>): ReadonlyArray<A> {
   return Array.from(toIterable(as))
